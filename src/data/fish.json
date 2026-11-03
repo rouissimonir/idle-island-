@@ -1,0 +1,42 @@
+[
+  {
+    "id": "minnow",
+    "name": "Minnow",
+    "sellValue": 4,
+    "rarity": "common",
+    "color": "#9fd4e4",
+    "weights": [62, 42, 26, 14, 6, 2]
+  },
+  {
+    "id": "sardine",
+    "name": "Sardine",
+    "sellValue": 9,
+    "rarity": "common",
+    "color": "#7eb8d4",
+    "weights": [28, 34, 30, 24, 16, 10]
+  },
+  {
+    "id": "mackerel",
+    "name": "Mackerel",
+    "sellValue": 22,
+    "rarity": "uncommon",
+    "color": "#4f8f72",
+    "weights": [10, 16, 24, 28, 28, 22]
+  },
+  {
+    "id": "bream",
+    "name": "Sea Bream",
+    "sellValue": 48,
+    "rarity": "rare",
+    "color": "#e0a090",
+    "weights": [0, 8, 15, 22, 28, 32]
+  },
+  {
+    "id": "koi",
+    "name": "Island Koi",
+    "sellValue": 120,
+    "rarity": "legendary",
+    "color": "#f2d06b",
+    "weights": [0, 0, 5, 12, 22, 34]
+  }
+]

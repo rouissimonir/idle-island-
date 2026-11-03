@@ -1,0 +1,56 @@
+[
+  {
+    "id": "rod",
+    "name": "Better Rod",
+    "description": "Faster casts and a better chance at rare fish.",
+    "effect": "rod",
+    "maxLevel": 5,
+    "costs": [30, 160, 560, 1800, 5200],
+    "automation": false
+  },
+  {
+    "id": "soil",
+    "name": "Fertile Soil",
+    "description": "Crops planted after this upgrade grow faster.",
+    "effect": "soil",
+    "maxLevel": 5,
+    "costs": [40, 190, 680, 2000, 5600],
+    "automation": false
+  },
+  {
+    "id": "market",
+    "name": "Market Stall",
+    "description": "Sell fish and crops for more coins.",
+    "effect": "market",
+    "maxLevel": 5,
+    "costs": [55, 210, 740, 2200, 6000],
+    "automation": false
+  },
+  {
+    "id": "auto_fisher",
+    "name": "Auto-fisher",
+    "description": "A dock contraption that keeps casting while you watch and while you are away.",
+    "effect": "auto_fisher",
+    "maxLevel": 1,
+    "costs": [240],
+    "automation": true
+  },
+  {
+    "id": "sprinkler",
+    "name": "Sprinkler",
+    "description": "Shortens grow time for crops planted after you buy it.",
+    "effect": "sprinkler",
+    "maxLevel": 1,
+    "costs": [1800],
+    "automation": true
+  },
+  {
+    "id": "helper",
+    "name": "Farm Helper",
+    "description": "Harvests ripe crops and replants the same crop, including while you are away.",
+    "effect": "helper",
+    "maxLevel": 1,
+    "costs": [4200],
+    "automation": true
+  }
+]

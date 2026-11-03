@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "water",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "island",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "dock",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "plot",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "tree",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "cottage",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    },
+    {
+      "id": "rock",
+      "file": null,
+      "scale": 1,
+      "license": "original",
+      "source": "primitive"
+    }
+  ]
+}

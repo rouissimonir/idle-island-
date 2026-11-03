@@ -1,0 +1,16 @@
+{
+  "offlineCapMs": 14400000,
+  "awayThresholdMs": 20000,
+  "summaryMinMs": 60000,
+  "manualCastBaseMs": 5000,
+  "autoCastBaseMs": 60000,
+  "tideCastMs": 180000,
+  "castLevelFactor": 0.86,
+  "minManualCastMs": 900,
+  "minAutoCastMs": 8000,
+  "soilGrowFactor": 0.9,
+  "sprinklerGrowFactor": 0.62,
+  "marketPriceFactor": 1.12,
+  "plotCount": 4,
+  "maxCastsPerAdvance": 20000
+}
