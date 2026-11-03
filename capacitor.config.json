@@ -1,0 +1,11 @@
+{
+  "appId": "app.islandidle.game",
+  "appName": "Island Idle",
+  "webDir": "dist",
+  "backgroundColor": "#6eb8c8",
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#6eb8c8",
+    "allowsLinkPreview": false
+  }
+}

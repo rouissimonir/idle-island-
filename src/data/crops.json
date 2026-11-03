@@ -1,0 +1,23 @@
+[
+  {
+    "id": "turnip",
+    "name": "Turnip",
+    "growSeconds": 90,
+    "sellValue": 8,
+    "color": "#e6c36a"
+  },
+  {
+    "id": "carrot",
+    "name": "Carrot",
+    "growSeconds": 240,
+    "sellValue": 26,
+    "color": "#e07a3d"
+  },
+  {
+    "id": "pumpkin",
+    "name": "Pumpkin",
+    "growSeconds": 600,
+    "sellValue": 78,
+    "color": "#d98a2b"
+  }
+]
