@@ -19,6 +19,10 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
   await expect(page.getByRole('heading', { name: 'Island Idle' })).toBeVisible();
   await expect(page.locator('#scene')).toBeVisible();
 
+  // Production build hides the dev panel and shows the player-facing Reset Island button
+  await expect(page.locator('#dev-panel')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Reset Island' })).toBeVisible();
+
   // 1. Fresh island screenshot
   await page.screenshot({ path: `artifacts/01-fresh-${tag}.png` });
 
@@ -44,8 +48,8 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
   expect(tendedState?.plots.every((p) => p.cropId !== null)).toBe(true);
   await page.screenshot({ path: `artifacts/02-tended-${tag}.png` });
 
-  // 3. Verify a 4-hour jump does NOT say the 4h offline cap was reached
-  await page.getByRole('button', { name: 'Away 4h' }).click();
+  // 3. Drive an exact 4-hour jump through window.__ISLAND__ and verify it does NOT say the cap was reached
+  await page.evaluate(() => window.__ISLAND__?.jumpHours(4));
   await expect(page.getByRole('heading', { name: 'While You Were Away' })).toBeVisible();
   await expect(page.locator('#away-duration')).not.toContainText('4h offline cap reached');
   await page.getByRole('button', { name: /Collect & Sell/i }).click();
@@ -83,4 +87,16 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
 
   await page.getByRole('button', { name: /Collect & Sell/i }).click();
   await expect(page.getByRole('heading', { name: 'While You Were Away' })).toBeHidden();
+
+  // 5. Verify save survived the reload and player-facing Reset Island starts a fresh island
+  const restoredState = await page.evaluate(() => window.__ISLAND__?.getState());
+  expect(restoredState?.coins).toBeGreaterThan(0);
+  expect(restoredState?.upgrades.rod).toBe(1);
+
+  await page.getByRole('button', { name: 'Reset Island' }).click();
+  await expect(page.getByTestId('coins')).toHaveText('0 coins');
+  const freshState = await page.evaluate(() => window.__ISLAND__?.getState());
+  expect(freshState?.coins).toBe(0);
+  expect(freshState?.upgrades).toEqual({});
+  expect(freshState?.plots.every((p) => p.cropId === null)).toBe(true);
 });

@@ -1,6 +1,6 @@
 # Island Idle
 
-A small 3D idle island: fish, farm, leave, and come back to collect. Milestones 0–3 are implemented: core rules (`src/core`), playable 3D scene and HTML overlay (`src/render`, `src/ui`), and the 14-day economy simulation (`src/sim`).
+A small 3D idle island: fish, farm, leave, and come back to collect. Milestones 0–4 are implemented: core rules (`src/core`), playable 3D scene and HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`), and the GLB art-swap pipeline (`assets/models/rock.glb`).
 
 The owner does not hand-write the code. Agents should start at [AGENTS.md](AGENTS.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -19,7 +19,8 @@ Open http://127.0.0.1:47321 .
 - **Plant & Harvest**: Pick a crop chip (**Turnip**, **Carrot**, or **Pumpkin**) in the bottom dock, then tap an empty 3D plot (or its plot button) to plant. When a crop is ripe, tap the plot to harvest it into your basket.
 - **Sell**: Click **Sell** to convert everything in your basket into coins at current market prices.
 - **Upgrades**: Open **Upgrades** to spend coins on the three level tracks (**Better Rod**, **Fertile Soil**, **Market Stall**) and the three automation unlocks (**Auto-fisher**, **Sprinkler**, **Farm Helper**).
-- **Away & Dev Clock**: Use the top-right **Dev** controls (**Away 1h**, **Away 4h**, **Away 8h**, **Reset**) or `?jumpMs=` / `window.__ISLAND__.reloadJumpHours(hours)` to simulate absence up to the 4-hour offline cap and collect or stash pending goods in the **While You Were Away** modal.
+- **Reset Island**: Click **Reset Island** on the status card at any time (including in production builds) to start a fresh island.
+- **Away & Dev Clock**: In development (`npm run dev`), use the top-right **Dev** controls (**Away 1h**, **Away 4h**, **Away 8h**, **Reset**) or `?jumpMs=` / `window.__ISLAND__.reloadJumpHours(hours)` to simulate absence up to the 4-hour offline cap and collect or stash pending goods in the **While You Were Away** modal. The **Dev** panel is hidden in production builds.
 
 Other commands:
 

@@ -45,8 +45,15 @@ function islandAssets(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: './',
+  define:
+    command === 'build'
+      ? {
+          'import.meta.env.DEV': false,
+          'import.meta.env.PROD': true,
+        }
+      : undefined,
   plugins: [islandAssets()],
   server: { host: '0.0.0.0', port: 47321, strictPort: true },
   preview: { host: '127.0.0.1', port: 47323, strictPort: true },
@@ -55,4 +62,4 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
   },
-});
+}));

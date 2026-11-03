@@ -108,6 +108,14 @@ const view = await mountScene(canvas, {
   onPlotTap: (plotIndex) => handlePlotInteraction(plotIndex),
 });
 
+const resetIsland = (): void => {
+  const now = Date.now();
+  state = createInitialState(now, freshSeed());
+  overlay.closeUpgrades();
+  overlay.setStatus('Island reset to a fresh start.');
+  persistAndRender(now);
+};
+
 const overlay = mountOverlay({
   onCast: () => handleCast(),
   onSelectCrop: (cropId) => {
@@ -140,6 +148,7 @@ const overlay = mountOverlay({
     }
     persistAndRender();
   },
+  onResetIsland: () => resetIsland(),
   onDevJumpHours: (hours) => {
     const now = Date.now();
     if (now > state.lastTickAt) {
@@ -152,13 +161,7 @@ const overlay = mountOverlay({
     );
     persistAndRender(now);
   },
-  onDevReset: () => {
-    const now = Date.now();
-    state = createInitialState(now, freshSeed());
-    overlay.closeUpgrades();
-    overlay.setStatus('Island reset to a fresh start.');
-    persistAndRender(now);
-  },
+  onDevReset: () => resetIsland(),
 });
 
 persistAndRender(nowAtBoot);

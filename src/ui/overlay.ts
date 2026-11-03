@@ -18,6 +18,7 @@ export interface OverlayCallbacks {
   onSellBasket: () => void;
   onBuyUpgrade: (upgradeId: string) => void;
   onCollectPending: (mode: 'sell' | 'stash') => void;
+  onResetIsland: () => void;
   onDevJumpHours: (hours: number) => void;
   onDevReset: () => void;
 }
@@ -41,6 +42,7 @@ export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
   const castBtn = mustButton('#cast-btn');
   const sellBtn = mustButton('#sell-btn');
   const upgradesBtn = mustButton('#upgrades-btn');
+  const resetIslandBtn = mustButton('#reset-island-btn');
   const closeUpgradesBtn = mustButton('#close-upgrades-btn');
   const upgradesSheetEl = mustEl('#upgrades-sheet');
   const upgradesTracksEl = mustEl('#upgrades-tracks');
@@ -55,10 +57,13 @@ export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
   const collectSellBtn = mustButton('#collect-sell-btn');
   const collectStashBtn = mustButton('#collect-stash-btn');
 
+  const devPanelEl = mustEl('#dev-panel');
   const devAway1hBtn = mustButton('#dev-away-1h');
   const devAway4hBtn = mustButton('#dev-away-4h');
   const devAway8hBtn = mustButton('#dev-away-8h');
   const devResetBtn = mustButton('#dev-reset');
+
+  devPanelEl.classList.toggle('hidden', !import.meta.env.DEV);
 
   const setUpgradesOpen = (open: boolean): void => {
     upgradesOpen = open;
@@ -69,6 +74,7 @@ export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
   castBtn.addEventListener('click', () => callbacks.onCast());
   sellBtn.addEventListener('click', () => callbacks.onSellBasket());
   upgradesBtn.addEventListener('click', () => setUpgradesOpen(!upgradesOpen));
+  resetIslandBtn.addEventListener('click', () => callbacks.onResetIsland());
   closeUpgradesBtn.addEventListener('click', () => setUpgradesOpen(false));
   upgradesSheetEl.addEventListener('click', (e) => {
     if (e.target === upgradesSheetEl) setUpgradesOpen(false);

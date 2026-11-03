@@ -5,9 +5,7 @@ Do the lowest milestone that is not done. One milestone per session. Leave later
 ## Paste this next
 
 ```text
-Implement milestone 5 from docs/ROADMAP.md only. Follow AGENTS.md and docs/RULES.md.
-Prepare the Capacitor iOS device shell, hide the dev clock behind a dev flag before TestFlight while keeping a player-facing island reset option, and verify save persistence and background loop pause.
-npm test, npm run lint, and npm run build must pass.
+Finish milestone 5 from docs/ROADMAP.md on a Mac with Xcode and CocoaPods installed: run npm run build, npx cap add ios, npx cap sync ios, and verify in the iOS Simulator that the save survives an app restart and the render loop pauses in the background.
 ```
 
 ## Milestone 0 — Scaffold
