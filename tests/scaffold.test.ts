@@ -109,6 +109,35 @@ describe('game shell', () => {
 
     const cleared = await loadModel({ ...rock, file: null });
     expect(cleared).toBeNull();
+
+    // Non-GLB response (e.g., HTML 200 fallback) returns null and keeps the primitive
+    const htmlBytes = new TextEncoder().encode('<!doctype html><html></html>');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(htmlBytes.buffer),
+        }),
+      ),
+    );
+    expect(await loadModel(rock)).toBeNull();
+
+    // Corrupt GLB (valid magic header but invalid JSON chunk) throws in parseAsync and returns null
+    const corruptGlb = new Uint8Array(24);
+    new DataView(corruptGlb.buffer).setUint32(0, 0x46546c67, true);
+    new DataView(corruptGlb.buffer).setUint32(4, 2, true);
+    new DataView(corruptGlb.buffer).setUint32(8, 24, true);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(corruptGlb.buffer),
+        }),
+      ),
+    );
+    expect(await loadModel(rock)).toBeNull();
   });
 
   it('keeps src/core free of three.js and the DOM', () => {
