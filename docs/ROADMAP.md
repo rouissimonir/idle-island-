@@ -5,10 +5,9 @@ Do the lowest milestone that is not done. One milestone per session. Leave later
 ## Paste this next
 
 ```text
-Implement milestone 4 from docs/ROADMAP.md only. Follow AGENTS.md and docs/RULES.md.
-Prove a GLB replaces a placeholder without a code change using a tiny checked-in assets/models/rock.glb with a named license.
-Set the manifest file for rock, run npm run shots to show the swapped rock, and verify clearing file restores the primitive.
-npm test, npm run lint, npm run build, and npm run shots must pass.
+Implement milestone 5 from docs/ROADMAP.md only. Follow AGENTS.md and docs/RULES.md.
+Prepare the Capacitor iOS device shell, hide the dev clock behind a dev flag before TestFlight while keeping a player-facing island reset option, and verify save persistence and background loop pause.
+npm test, npm run lint, and npm run build must pass.
 ```
 
 ## Milestone 0 — Scaffold
@@ -88,6 +87,8 @@ Replace the stub in `scripts/sim.ts`. Put the pure runner in `src/sim/` so Vites
 **Done when** `npm run sim` prints that curve, a unit test runs a shorter sim without throwing, the auto-fisher is not free on the first cast, and the helper is not owned at the end of day 1. If the curve is absurd (everything owned on day 1, or nothing affordable after an hour), adjust JSON **and** `docs/RULES.md` together and say so in the report.
 
 ## Milestone 4 — Art swap check
+
+**Done.**
 
 Prove a GLB replaces a placeholder without a code change.
 

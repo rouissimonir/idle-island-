@@ -10,7 +10,11 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
 }, testInfo) => {
   const tag = testInfo.project.name;
 
+  const rockGlbResponse = page.waitForResponse(
+    (res) => res.url().endsWith('/assets/models/rock.glb') && res.status() === 200,
+  );
   await page.goto('/');
+  await rockGlbResponse;
   await page.waitForFunction(() => window.__ISLAND__?.ready === true);
   await expect(page.getByRole('heading', { name: 'Island Idle' })).toBeVisible();
   await expect(page.locator('#scene')).toBeVisible();

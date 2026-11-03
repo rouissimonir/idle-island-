@@ -1,14 +1,19 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import manifest from '../assets/assets.json' with { type: 'json' };
 import { content, createInitialState, deserialize, serialize } from '../src/core/index.ts';
 import { cappedElapsedMs } from '../src/core/offline.ts';
 import fishJson from '../src/data/fish.json' with { type: 'json' };
 import { parseAssets, parseContent } from '../src/data/validate.ts';
 import { createSaveAdapter } from '../src/platform/storage.ts';
+import { findAsset, loadModel } from '../src/render/assets.ts';
 import { FRAME_MS, MAX_PIXEL_RATIO, TARGET_FPS, nextFrameDecision } from '../src/render/loop.ts';
 import { SCENE_ASSETS } from '../src/render/props.ts';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('game shell', () => {
   it('starts a new island with empty plots and no coins', () => {
@@ -65,13 +70,45 @@ describe('game shell', () => {
     expect(parsed.ok).toBe(false);
   });
 
-  it('lists every placeholder the scene mounts', () => {
+  it('lists every scene asset and swaps rock between GLB and primitive when file is cleared', async () => {
     const parsed = parseAssets(manifest);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const ids = new Set(parsed.value.assets.map((asset) => asset.id));
     for (const id of SCENE_ASSETS) expect(ids.has(id)).toBe(true);
-    expect(parsed.value.assets.every((asset) => asset.file === null)).toBe(true);
+
+    for (const asset of parsed.value.assets) {
+      if (asset.file !== null) {
+        expect(existsSync(path.join('assets', asset.file))).toBe(true);
+      }
+    }
+
+    const rock = findAsset('rock');
+    expect(rock).toBeDefined();
+    expect(rock?.file).toBe('models/rock.glb');
+    expect(rock?.license).toBe('CC0-1.0');
+    if (!rock || !rock.file) return;
+
+    const glbBytes = readFileSync(path.join('assets', rock.file));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          arrayBuffer: () =>
+            Promise.resolve(
+              glbBytes.buffer.slice(glbBytes.byteOffset, glbBytes.byteOffset + glbBytes.byteLength),
+            ),
+        }),
+      ),
+    );
+
+    const loaded = await loadModel(rock);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.getObjectByName('Rock')).toBeDefined();
+
+    const cleared = await loadModel({ ...rock, file: null });
+    expect(cleared).toBeNull();
   });
 
   it('keeps src/core free of three.js and the DOM', () => {

@@ -45,10 +45,10 @@
     },
     {
       "id": "rock",
-      "file": null,
+      "file": "models/rock.glb",
       "scale": 1,
-      "license": "original",
-      "source": "primitive"
+      "license": "CC0-1.0",
+      "source": "original"
     }
   ]
 }

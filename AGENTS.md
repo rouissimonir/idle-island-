@@ -4,7 +4,7 @@ Instructions for any coding agent working in this repo (Claude, GPT, Grok, Curso
 
 ## Status
 
-Milestones 0–3 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), and the 14-day economy simulation (`src/sim`, `scripts/sim.ts`). Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done (next is milestone 4). Do not skip ahead.
+Milestones 0–4 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`, `scripts/sim.ts`), and the GLB art-swap check (`assets/models/rock.glb`, `assets/assets.json`). Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done (next is milestone 5). Do not skip ahead.
 
 ## Before you finish
 
