@@ -17,6 +17,7 @@ import {
   pendingValue,
   plantPlot,
   rollFish,
+  SAVE_VERSION,
   sellAll,
   serialize,
   tryFish,
@@ -133,8 +134,8 @@ describe('milestone 1 — core rules', () => {
     expect(state.plots[1]?.readyAt).toBe(growMs('turnip', 1, true));
   });
 
-  it('buys upgrades when affordable and rejects when poor or at max level', () => {
-    const state = createInitialState(0, 1);
+  it('buys upgrades when affordable, rejects when poor or maxed, and schedules auto_fisher at lastTickAt + autoCastMs', () => {
+    const state = createInitialState(1000, 1);
     expect(buyUpgrade(state, 'rod')).toEqual({
       ok: false,
       reason: 'insufficient_coins',
@@ -149,7 +150,9 @@ describe('milestone 1 — core rules', () => {
     expect(state.coins).toBe(0);
 
     state.coins = 10000;
+    expect(state.fishing.autoNextAt).toBe(1000);
     expect(buyUpgrade(state, 'auto_fisher').ok).toBe(true);
+    expect(state.fishing.autoNextAt).toBe(1000 + autoCastMs(1));
     expect(buyUpgrade(state, 'auto_fisher')).toEqual({
       ok: false,
       reason: 'max_level',
@@ -161,7 +164,7 @@ describe('milestone 1 — core rules', () => {
     expect(autoView?.nextCost).toBeNull();
   });
 
-  it('produces tide fish while away without auto-fisher and caps at 4h (20h equals 4h)', () => {
+  it('produces tide fish while away without auto-fisher and marks pending.capped only when elapsed > offlineCapMs', () => {
     const state4h = createInitialState(0, 99);
     const state20h = createInitialState(0, 99);
 
@@ -169,7 +172,9 @@ describe('milestone 1 — core rules', () => {
     const rep20h = advanceTime(state20h, 20 * 3600 * 1000, 'away');
 
     expect(rep4h.capped).toBe(false);
+    expect(state4h.pending?.capped).toBe(false);
     expect(rep20h.capped).toBe(true);
+    expect(state20h.pending?.capped).toBe(true);
     expect(rep4h.processed).toBe(content.balance.offlineCapMs);
     expect(rep20h.processed).toBe(content.balance.offlineCapMs);
     expect(rep4h.fish).toEqual(rep20h.fish);
@@ -177,15 +182,23 @@ describe('milestone 1 — core rules', () => {
     expect(pendingValue(state4h)).toBe(pendingValue(state20h));
   });
 
+  it('advances autoNextAt by fired castCount when clamped to maxCastsPerAdvance', () => {
+    const state = createInitialState(0, 7);
+    state.upgrades.auto_fisher = 1;
+    state.upgrades.rod = 5;
+    const interval = autoCastMs(5);
+    const hugeWindow = (content.balance.maxCastsPerAdvance + 500) * interval;
+    advanceTime(state, hugeWindow, 'active');
+    expect(state.fishing.autoNextAt).toBe(content.balance.maxCastsPerAdvance * interval);
+  });
+
   it('does not backfill the tide during active play', () => {
     const state = createInitialState(0, 1);
-    // Watch actively for 30 minutes without auto-fisher
     const activeReport = advanceTime(state, 30 * 60 * 1000, 'active');
     expect(activeReport.coins).toBe(0);
     expect(state.inventory.fish).toEqual({});
     expect(state.fishing.autoNextAt).toBe(30 * 60 * 1000 + content.balance.tideCastMs);
 
-    // Going away for 2 minutes (< tideCastMs of 3 minutes) yields 0 tide casts
     const shortAway = advanceTime(state, 32 * 60 * 1000, 'away');
     expect(shortAway.fish).toEqual({});
   });
@@ -199,8 +212,7 @@ describe('milestone 1 — core rules', () => {
 
     const withHelper = createInitialState(0, 1);
     withHelper.upgrades.helper = 1;
-    plantPlot(withHelper, 0, 'turnip', 0); // ready at 90,000ms
-    // 450,000ms = 5 full cycles of 90,000ms
+    plantPlot(withHelper, 0, 'turnip', 0);
     advanceTime(withHelper, 450_000, 'away');
     expect(withHelper.pending?.crops.turnip).toBe(5);
     expect(withHelper.plots[0]?.cropId).toBe('turnip');
@@ -222,7 +234,6 @@ describe('milestone 1 — core rules', () => {
     expect(collected.coinsGained).toBe(pendingCoins);
     expect(state.coins).toBe(pendingCoins);
     expect(state.pending).toBeNull();
-    // Pre-existing basket is untouched
     expect(basketValue(state)).toBe(existingBasketValue);
 
     const soldBasket = sellAll(state);
@@ -230,7 +241,7 @@ describe('milestone 1 — core rules', () => {
     expect(state.coins).toBe(pendingCoins + existingBasketValue);
   });
 
-  it('round-trips a mutated save and rejects unknown item or upgrade ids', () => {
+  it('round-trips a mutated save, migrates v1 saves, and rejects unknown item or upgrade ids', () => {
     const state = createInitialState(1000, 15);
     tryFish(state, 1000);
     plantPlot(state, 0, 'carrot', 1000);
@@ -239,6 +250,17 @@ describe('milestone 1 — core rules', () => {
     const raw = serialize(state);
     const restored = deserialize(raw);
     expect(restored).toEqual(state);
+
+    // Migrate version 1 save where pending lacks capped
+    const v1Raw = JSON.stringify({
+      ...state,
+      version: 1,
+      pending: { fish: { minnow: 2 }, crops: {}, elapsedMs: 120_000 },
+    });
+    const migrated = deserialize(v1Raw);
+    expect(migrated).not.toBeNull();
+    expect(migrated?.version).toBe(SAVE_VERSION);
+    expect(migrated?.pending?.capped).toBe(false);
 
     const badUpgrade = structuredClone(state);
     badUpgrade.upgrades.jetpack = 1;

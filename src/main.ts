@@ -37,6 +37,9 @@ let state: GameState = saved
 // Resolve any real away gap or simulated reload jump (?jumpMs= or sessionStorage)
 const reloadJumpMs = consumeReloadJumpMs();
 if (reloadJumpMs > 0) {
+  if (nowAtBoot > state.lastTickAt) {
+    advanceTime(state, nowAtBoot, 'active');
+  }
   jumpAway(state, reloadJumpMs, nowAtBoot);
 } else {
   const gap = nowAtBoot - state.lastTickAt;
@@ -139,6 +142,9 @@ const overlay = mountOverlay({
   },
   onDevJumpHours: (hours) => {
     const now = Date.now();
+    if (now > state.lastTickAt) {
+      advanceTime(state, now, 'active');
+    }
     const ms = Math.round(hours * 3_600_000);
     const report = jumpAway(state, ms, now);
     overlay.setStatus(
@@ -243,6 +249,9 @@ const debug: IslandDebug = {
   },
   jumpHours: (hours) => {
     const now = Date.now();
+    if (now > state.lastTickAt) {
+      advanceTime(state, now, 'active');
+    }
     const ms = Math.round(hours * 3_600_000);
     const report = jumpAway(state, ms, now);
     persistAndRender(now);

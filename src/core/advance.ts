@@ -55,7 +55,7 @@ export function advanceTime(state: GameState, now: number, mode: AdvanceMode): A
         const caught = rollFish(state, rodLevel);
         addFishToPile(producedFish, caught.id, 1);
       }
-      state.fishing.autoNextAt += rawCount * interval;
+      state.fishing.autoNextAt += castCount * interval;
     }
   }
 
@@ -111,9 +111,10 @@ export function advanceTime(state: GameState, now: number, mode: AdvanceMode): A
   if (toPending) {
     if (hasProduced || state.pending !== null) {
       if (!state.pending) {
-        state.pending = { fish: {}, crops: {}, elapsedMs: 0 };
+        state.pending = { fish: {}, crops: {}, elapsedMs: 0, capped: false };
       }
       state.pending.elapsedMs += processed;
+      state.pending.capped = state.pending.capped || capped;
       for (const [id, count] of Object.entries(producedFish)) {
         addFishToPile(state.pending.fish, id, count);
       }

@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 1 as const;
+export const SAVE_VERSION = 2 as const;
 
 export interface PlotState {
   cropId: string | null;
@@ -13,9 +13,10 @@ export interface ItemPiles {
 
 export interface PendingRewards extends ItemPiles {
   elapsedMs: number;
+  capped: boolean;
 }
 
-/** Serializable save blob. Milestone 1 fills in the actions that mutate it. */
+/** Serializable save blob. */
 export interface GameState {
   version: typeof SAVE_VERSION;
   rngState: number;

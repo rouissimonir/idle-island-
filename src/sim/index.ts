@@ -9,6 +9,7 @@ import {
   harvestPlot,
   plantPlot,
   sellAll,
+  shiftTimestamps,
   tryFish,
   unitPrice,
   type GameState,
@@ -103,10 +104,10 @@ function tryBuyAlongOrder(
   state: GameState,
   day: number,
   sessionLabel: string,
-  elapsedMinutes: number,
   timestampMs: number,
   milestones: UpgradeMilestone[],
 ): void {
+  const elapsedMinutes = Math.round(timestampMs / 60_000);
   for (const step of SUGGESTED_BUY_ORDER) {
     const current = state.upgrades[step.id] ?? 0;
     if (current >= step.targetLevel) {
@@ -122,7 +123,7 @@ function tryBuyAlongOrder(
       level: res.value.level,
       day,
       sessionLabel,
-      elapsedMinutes: Math.round(elapsedMinutes * 10) / 10,
+      elapsedMinutes,
       timestampMs,
     });
   }
@@ -135,16 +136,18 @@ export function runSimulation(options: SimOptions = {}): SimResult {
 
   const days: DaySummary[] = [];
   const milestones: UpgradeMilestone[] = [];
-  let now = 0;
+  let now = 0; // t = 0 is Day 1 at 08:00
   let firstCastRecorded = false;
   let firstCastCoins = 0;
 
-  const activeSessionMs = 4 * 60 * 1000; // 4 minutes
-  const morningAwayMs = 2 * 60 * 60 * 1000; // 2 hours
-  const afternoonAwayMs = 18 * 60 * 60 * 1000; // 18 hours
+  const activeSessionMs = 4 * 60 * 1000; // 4 minutes (08:00-08:04, 13:00-13:04)
+  const morningAwayMs = 2 * 60 * 60 * 1000; // 2 hours (08:04-10:04)
+  const middayGapMs = (2 * 60 + 56) * 60 * 1000; // 2h 56m unsimulated gap (10:04-13:00)
+  const afternoonAwayMs = 18 * 60 * 60 * 1000; // 18 hours (13:04-07:04 next day)
+  const morningGapMs = 56 * 60 * 1000; // 56m unsimulated gap (07:04-08:00)
   const stepMs = 1000;
 
-  const runSession = (day: number, label: string, startClockMinutes: number): void => {
+  const runSession = (day: number, label: string): void => {
     const sessionStart = now;
     const sessionEnd = sessionStart + activeSessionMs;
 
@@ -179,35 +182,42 @@ export function runSimulation(options: SimOptions = {}): SimResult {
       }
 
       // 4. Buy upgrades in suggested order
-      const sessionMinutes = startClockMinutes + (now - sessionStart) / 60_000;
-      tryBuyAlongOrder(state, day, label, sessionMinutes, now, milestones);
+      tryBuyAlongOrder(state, day, label, now, milestones);
     }
   };
 
   for (let day = 1; day <= totalDays; day += 1) {
-    // Morning session at 08:00 (480m from midnight)
-    runSession(day, '08:00', 8 * 60);
+    // 08:00 — 4 minutes active (08:00 to 08:04)
+    runSession(day, '08:00');
 
-    // 2 hours away after morning session
+    // 08:04 to 10:04 — 2 hours away
     now += morningAwayMs;
     advanceTime(state, now, 'away');
     collectPending(state, 'sell');
     if (basketValue(state) > 0) {
       sellAll(state);
     }
-    tryBuyAlongOrder(state, day, '10:04-away', 10 * 60 + 4, now, milestones);
+    tryBuyAlongOrder(state, day, '10:04-away', now, milestones);
 
-    // Afternoon session at 13:00 (780m from midnight)
-    runSession(day, '13:00', 13 * 60);
+    // 10:04 to 13:00 — shift timestamps across gap so no fish or crops are granted
+    shiftTimestamps(state, middayGapMs);
+    now += middayGapMs;
 
-    // 18 hours away after afternoon session
+    // 13:00 — 4 minutes active (13:00 to 13:04)
+    runSession(day, '13:00');
+
+    // 13:04 to 07:04 — 18 hours away
     now += afternoonAwayMs;
     advanceTime(state, now, 'away');
     collectPending(state, 'sell');
     if (basketValue(state) > 0) {
       sellAll(state);
     }
-    tryBuyAlongOrder(state, day, 'overnight', 24 * 60, now, milestones);
+    tryBuyAlongOrder(state, day, '07:04-away', now, milestones);
+
+    // 07:04 to 08:00 — shift timestamps across gap to reach 08:00 of the next morning
+    shiftTimestamps(state, morningGapMs);
+    now += morningGapMs;
 
     days.push({
       day,
@@ -235,20 +245,19 @@ export function formatSimReport(result: SimResult): string {
   const lines: string[] = [];
   lines.push('=== Island Idle 14-Day Economy Simulation ===');
   lines.push('');
-  lines.push('Day | Coins  | Rod | Soil | Market | AutoFish | Sprinkler | Helper');
-  lines.push('----+--------+-----+------+--------+----------+-----------+-------');
+  lines.push('Day |    Coins | Rod | Soil | Market | AutoFish | Sprinkler | Helper');
+  lines.push('----+----------+-----+------+--------+----------+-----------+-------');
   for (const row of result.days) {
     const u = row.upgrades;
     lines.push(
-      `${String(row.day).padStart(3)} | ${String(row.coins).padStart(6)} | ${String(u.rod ?? 0).padStart(3)} | ${String(u.soil ?? 0).padStart(4)} | ${String(u.market ?? 0).padStart(6)} | ${String(u.auto_fisher ?? 0).padStart(8)} | ${String(u.sprinkler ?? 0).padStart(9)} | ${String(u.helper ?? 0).padStart(6)}`,
+      `${String(row.day).padStart(3)} | ${String(row.coins).padStart(8)} | ${String(u.rod ?? 0).padStart(3)} | ${String(u.soil ?? 0).padStart(4)} | ${String(u.market ?? 0).padStart(6)} | ${String(u.auto_fisher ?? 0).padStart(8)} | ${String(u.sprinkler ?? 0).padStart(9)} | ${String(u.helper ?? 0).padStart(6)}`,
     );
   }
   lines.push('');
   lines.push('=== First Timestamp of Each Upgrade Level ===');
   for (const m of result.milestones) {
-    const totalMin = Math.round(m.timestampMs / 60_000);
     lines.push(
-      `Day ${String(m.day).padStart(2)} (${m.sessionLabel.padEnd(10)}) [t=${String(totalMin).padStart(5)}m]: ${m.id} -> Lv.${m.level}`,
+      `Day ${String(m.day).padStart(2)} (${m.sessionLabel.padEnd(10)}) [t=${String(m.elapsedMinutes).padStart(5)}m]: ${m.id} -> Lv.${m.level}`,
     );
   }
   return lines.join('\n');

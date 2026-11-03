@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { content } from '../core/content.ts';
-import type { GameState } from '../core/types.ts';
+import { content, type GameState } from '../core/index.ts';
 import type { ProjectTarget } from '../debug.ts';
 import { findAsset, loadModel } from './assets.ts';
 import { MAX_PIXEL_RATIO, nextFrameDecision } from './loop.ts';
@@ -538,7 +537,7 @@ function plotMesh(): THREE.Group {
   const soil = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), lambert('#6d4632'));
   const anchor = new THREE.Object3D();
   anchor.name = 'cropAnchor';
-  anchor.position.y = 0.2;
+  anchor.position.set(0, 0.25, 0);
   group.add(soil, anchor);
   return group;
 }

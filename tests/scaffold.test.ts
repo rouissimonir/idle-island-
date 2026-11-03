@@ -13,7 +13,7 @@ import { SCENE_ASSETS } from '../src/render/props.ts';
 describe('game shell', () => {
   it('starts a new island with empty plots and no coins', () => {
     const state = createInitialState(1_000, 5);
-    expect(state.version).toBe(1);
+    expect(state.version).toBe(2);
     expect(state.coins).toBe(0);
     expect(state.rngState).toBe(5);
     expect(state.plots).toHaveLength(content.balance.plotCount);
@@ -35,7 +35,7 @@ describe('game shell', () => {
     const restored = deserialize(serialize(state));
     expect(restored).toEqual(state);
     expect(deserialize('{')).toBeNull();
-    expect(deserialize(JSON.stringify({ ...state, version: 2 }))).toBeNull();
+    expect(deserialize(JSON.stringify({ ...state, version: 3 }))).toBeNull();
   });
 
   it('stores the save blob through a key-value adapter', () => {

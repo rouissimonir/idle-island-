@@ -2,7 +2,7 @@
 
 Authoritative spec for the simulation. `src/data/balance.json`, `fish.json`, `crops.json`, and `upgrades.json` are the machine copy of the tables below. If a formula and the JSON disagree, fix the JSON to match this document, then update the worked examples.
 
-Milestone 0 stores the tables and clamps offline time. It does **not** fish, farm, sell, buy, or resolve away rewards. Milestone 1 implements this file in `src/core`.
+Milestone 0 stored the tables and clamped offline time. Milestones 1–3 implement this file in `src/core`, wire the 3D scene and HTML overlay (`src/render`, `src/ui`), and run the 14-day economy simulation (`src/sim`).
 
 Schema bounds (positive costs, weight width, factor ranges) are enforced by `src/data/validate.ts`. Stay inside them.
 
@@ -27,7 +27,7 @@ All timestamps are milliseconds. Callers pass `now`. Core code does not read the
 | `plotCount`           | `4`        | Empty plots on a new island.                                |
 | `maxCastsPerAdvance`  | `20000`    | Safety cap on one `advanceTime` call.                       |
 
-`cappedElapsedMs` is implemented. Everything else in this file is spec.
+All rules and formulas in this file are implemented in `src/core`.
 
 ## Formulas
 
@@ -116,13 +116,13 @@ Suggested buy order for the sim, stopping at the first step the player cannot af
 
 ## Actions
 
-All of these mutate `state` and are still to be built.
+All of these mutate `state`.
 
 - `tryFish(state, now)` fails with `cooldown` when `now < fishing.manualNextAt`. Otherwise roll one fish into `inventory` and `collection`, and set `manualNextAt = now + manualCastMs(rodLevel)`.
 - `plantPlot(state, index, cropId, now)` fails if the index is bad, the plot is occupied, or the crop id is unknown. On success set `cropId`, `plantedAt = now`, and `readyAt = now + growMs(...)` using upgrades **at plant time**.
 - `harvestPlot(state, index, now)` fails if the plot is empty or `now < readyAt`. On success add one crop to inventory and collection and clear the plot.
 - `sellAll(state)` adds `unitPrice * count` for every basket stack, then clears the basket. Collection is unchanged. Returns the coins gained (0 if the basket was empty).
-- `buyUpgrade(state, id)` applies the cost rule above.
+- `buyUpgrade(state, id)` applies the cost rule above. When buying `auto_fisher`, `fishing.autoNextAt` is set to `lastTickAt + autoCastMs(rodLevel)` so the first auto cast is scheduled one interval out rather than firing immediately or waiting on the slower tide timer.
 - `collectPending(state, 'sell' | 'stash')` clears `pending`. `sell` adds coins and collection counts only. `stash` merges into the basket and the collection. Selling pending goods must not sell a basket that was already there.
 
 ## advanceTime
@@ -140,7 +140,7 @@ Fishing during the window:
 - If the auto-fisher is owned, emit casts every `autoCastMs(rodLevel)` starting at `fishing.autoNextAt`.
 - If it is not owned and mode is `away`, emit tide casts every `tideCastMs`.
 - If it is not owned and mode is `active`, do not emit casts. Set `autoNextAt` to `windowEnd + tideCastMs` so away time does not backfill the tide for the period the player was watching.
-- Cast count is `floor((windowEnd - autoNextAt) / interval) + 1` when `autoNextAt <= windowEnd`, then clamped to `maxCastsPerAdvance`. Each cast rolls one fish. Afterwards `autoNextAt` points at the next unfired cast.
+- Cast count is `floor((windowEnd - autoNextAt) / interval) + 1` when `autoNextAt <= windowEnd`, then clamped to `maxCastsPerAdvance`. Each cast rolls one fish. Afterwards `autoNextAt` advances by `castCount * interval` (pointing at the next cast that did not fire).
 
 Farming during the window:
 
@@ -155,18 +155,29 @@ Then set `lastTickAt = now`.
 Where goods go:
 
 - `active`: inventory and collection.
-- `away` and `processed >= summaryMinMs`: merge into `pending` (create it if null) and add `processed` to `pending.elapsedMs`.
+- `away` and `processed >= summaryMinMs`: merge into `pending` (create it if null), add `processed` to `pending.elapsedMs`, and set `pending.capped = pending.capped || capped` (where `capped` is `elapsed > offlineCapMs`, so an exact 4-hour jump is not marked capped, while an 8-hour jump is).
 - `away` and `processed < summaryMinMs`: inventory and collection, same as active. No summary.
 
 The report lists the fish and crops produced by **this** call and the coins they would sell for at current prices. Do not share the report's objects with `state`.
 
 `jumpAway` for the dev clock and for reload tests is `shiftTimestamps(state, -ms)` then `advanceTime(state, now, 'away')`. `shiftTimestamps` moves `lastTickAt`, both fishing timestamps, and every non-null `plantedAt` / `readyAt`. It does not change `pending.elapsedMs`.
 
-## Save validation
+## 14-day economy simulation clock
 
-`deserialize` validates all upgrade, fish, and crop IDs against `src/data/*.json` and rejects saves containing unknown item/upgrade IDs or upgrade levels exceeding `maxLevel` (returning `null`).
+In `src/sim/index.ts`, each simulated day starts at `08:00` (`1440` minutes per day):
+
+- `08:00–08:04`: 4 minutes of active play (`advanceTime(..., 'active')` every second).
+- `08:04–10:04`: 2 hours away (`advanceTime(..., 'away')` and `collectPending(..., 'sell')`).
+- `10:04–13:00`: unsimulated gap (`176` minutes). `shiftTimestamps(state, gapMs)` advances `lastTickAt`, fishing timers, and plot timers across the gap so no fish or crops are granted outside the two away windows.
+- `13:00–13:04`: 4 minutes of active play.
+- `13:04–07:04`: 18 hours away (`advanceTime(..., 'away')` and `collectPending(..., 'sell')`).
+- `07:04–08:00`: unsimulated gap (`56` minutes) shifted with `shiftTimestamps(state, gapMs)` to reach `08:00` of the next day.
+
+## Save validation & migration
+
+`SAVE_VERSION` is `2` (`pending.capped: boolean` added to `PendingRewards`). `deserialize` migrates version `1` saves to version `2` by defaulting a missing `pending.capped` flag to `false`. It validates all upgrade, fish, and crop IDs against `src/data/*.json` and rejects saves with unknown versions, corrupt fields, unknown item/upgrade IDs, or upgrade levels exceeding `maxLevel` (returning `null`).
 
 ## What is implemented now
 
-- Content JSON, schema, `GameState`, `createInitialState`, `serialize` / `deserialize`, `cappedElapsedMs`, save adapter.
+- Content JSON, schema, `GameState`, `createInitialState`, `serialize` / `deserialize` (with v1→v2 migration), `cappedElapsedMs`, save adapter.
 - Core rules: `nextUnit` (RNG), formulas, fishing, farming, upgrades, economy, `advanceTime` / `shiftTimestamps`, UI overlay, 3D scene interactions, and 14-day economy simulation.

@@ -5,10 +5,10 @@ Do the lowest milestone that is not done. One milestone per session. Leave later
 ## Paste this next
 
 ```text
-Implement milestone 1 from docs/ROADMAP.md only. Follow AGENTS.md and docs/RULES.md.
-Add the pure game API in src/core (RNG, formulas, fish, farm, sell, buy, advanceTime).
-No Three.js imports. Cover the worked examples and the away/cap rules with Vitest.
-npm test, npm run lint, and npm run build must pass. Do not build the 3D loop, the sim, or iOS.
+Implement milestone 4 from docs/ROADMAP.md only. Follow AGENTS.md and docs/RULES.md.
+Prove a GLB replaces a placeholder without a code change using a tiny checked-in assets/models/rock.glb with a named license.
+Set the manifest file for rock, run npm run shots to show the swapped rock, and verify clearing file restores the primitive.
+npm test, npm run lint, npm run build, and npm run shots must pass.
 ```
 
 ## Milestone 0 — Scaffold

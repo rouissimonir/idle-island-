@@ -40,10 +40,13 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
   expect(tendedState?.plots.every((p) => p.cropId !== null)).toBe(true);
   await page.screenshot({ path: `artifacts/02-tended-${tag}.png` });
 
-  // 3. Earn coins via away jump + sell, then open Upgrades sheet and buy rod, soil, market, and auto_fisher
+  // 3. Verify a 4-hour jump does NOT say the 4h offline cap was reached
+  await page.getByRole('button', { name: 'Away 4h' }).click();
+  await expect(page.getByRole('heading', { name: 'While You Were Away' })).toBeVisible();
+  await expect(page.locator('#away-duration')).not.toContainText('4h offline cap reached');
+  await page.getByRole('button', { name: /Collect & Sell/i }).click();
+
   await page.evaluate(() => {
-    window.__ISLAND__?.jumpHours(4);
-    window.__ISLAND__?.collect('sell');
     window.__ISLAND__?.jumpHours(4);
     window.__ISLAND__?.collect('sell');
     window.__ISLAND__?.sell();
@@ -65,12 +68,13 @@ test('plays through fresh island, tended island, upgrades sheet, and away modal'
   await page.screenshot({ path: `artifacts/03-upgrades-${tag}.png` });
   await page.getByRole('button', { name: 'Close upgrades' }).click();
 
-  // 4. Reload with a simulated jump via reloadJumpHours and verify the Away modal
+  // 4. Reload with an 8-hour simulated jump via reloadJumpHours and verify the Away modal shows the cap notice
   await page.evaluate(() => {
-    window.__ISLAND__?.reloadJumpHours(4);
+    window.__ISLAND__?.reloadJumpHours(8);
   });
   await page.waitForFunction(() => window.__ISLAND__?.ready === true);
   await expect(page.getByRole('heading', { name: 'While You Were Away' })).toBeVisible();
+  await expect(page.locator('#away-duration')).toContainText('4h offline cap reached');
   await page.screenshot({ path: `artifacts/04-away-${tag}.png` });
 
   await page.getByRole('button', { name: /Collect & Sell/i }).click();

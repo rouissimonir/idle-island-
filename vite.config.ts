@@ -48,14 +48,8 @@ function islandAssets(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [islandAssets()],
-  server: {
-    host: '0.0.0.0',
-    port: 3000,
-    allowedHosts: true,
-    hmr: process.env.DISABLE_HMR !== 'true',
-    watch: process.env.DISABLE_HMR === 'true' ? null : {},
-  },
-  preview: { host: '127.0.0.1', port: 47323, strictPort: true, allowedHosts: true },
+  server: { host: '0.0.0.0', port: 47321, strictPort: true },
+  preview: { host: '127.0.0.1', port: 47323, strictPort: true },
   build: { chunkSizeWarningLimit: 800 },
   test: {
     environment: 'node',

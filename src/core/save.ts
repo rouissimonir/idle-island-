@@ -1,5 +1,5 @@
 import { content } from './content.ts';
-import { SAVE_VERSION, type GameState, type PlotState } from './types.ts';
+import { SAVE_VERSION, type GameState, type PendingRewards, type PlotState } from './types.ts';
 
 export function serialize(state: GameState): string {
   return JSON.stringify(state);
@@ -7,12 +7,25 @@ export function serialize(state: GameState): string {
 
 export function deserialize(raw: string): GameState | null {
   try {
-    const data: unknown = JSON.parse(raw);
-    if (!isGameState(data)) return null;
-    return data;
+    const parsed: unknown = JSON.parse(raw);
+    const migrated = migrateSave(parsed);
+    if (!isGameState(migrated)) return null;
+    return migrated;
   } catch {
     return null;
   }
+}
+
+function migrateSave(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  if (value.version === 1) {
+    const next: Record<string, unknown> = { ...value, version: SAVE_VERSION };
+    if (isRecord(value.pending) && typeof value.pending.capped !== 'boolean') {
+      next.pending = { ...value.pending, capped: false };
+    }
+    return next;
+  }
+  return value;
 }
 
 const UPGRADE_MAX = new Map(content.upgrades.map((u) => [u.id, u.maxLevel]));
@@ -55,8 +68,9 @@ function isPlot(value: unknown): value is PlotState {
   return empty || planted;
 }
 
-function isPending(value: unknown): boolean {
+function isPending(value: unknown): value is PendingRewards {
   if (!isRecord(value) || !isNonNegativeInt(value.elapsedMs)) return false;
+  if (typeof value.capped !== 'boolean') return false;
   return isKnownCounts(value.fish, FISH_IDS) && isKnownCounts(value.crops, CROP_IDS);
 }
 

@@ -4,7 +4,7 @@ Instructions for any coding agent working in this repo (Claude, GPT, Grok, Curso
 
 ## Status
 
-Milestone 0 is done: docs, tooling, data stubs, a serializable state shell, and a placeholder island. Gameplay is **not** implemented. Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done. Do not skip ahead.
+Milestones 0–3 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), and the 14-day economy simulation (`src/sim`, `scripts/sim.ts`). Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done (next is milestone 4). Do not skip ahead.
 
 ## Before you finish
 
@@ -41,8 +41,8 @@ src/data/                 JSON content + schema parser
 src/core/                 pure game rules, no Three.js, no DOM
 src/render/               Three.js scene, loop, GLB swap
 src/platform/             localStorage adapter; later the widget snapshot
-src/ui/                   create in milestone 2 (HTML/CSS overlay)
-src/sim/                  create in milestone 3 (economy sim library)
+src/ui/                   HTML/CSS overlay
+src/sim/                  14-day economy simulation library
 scripts/sim.ts            npm run sim
 tests/                    Vitest (*.test.ts). Playwright lives in tests/e2e
 ios/                      not created yet; see README
@@ -103,7 +103,7 @@ License and source strings are required. Do not commit a GLB whose license you c
 | `npm test`         | Vitest, `tests/**/*.test.ts` only                           |
 | `npm run lint`     | ESLint and Prettier                                         |
 | `npm run build`    | `tsc --noEmit` and Vite build                               |
-| `npm run sim`      | Economy curve. Stub until milestone 3                       |
+| `npm run sim`      | 14-day economy curve                                        |
 | `npm run shots`    | Playwright screenshots into `artifacts/` (gitignored)       |
 | `npm run cap:sync` | Production build, then `cap sync` (needs `ios/` from a Mac) |
 

@@ -34,7 +34,6 @@ export interface OverlayController {
 export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
   let selectedCropId = content.crops[0]?.id ?? 'turnip';
   let upgradesOpen = false;
-  let lastCapNotice = false;
 
   const coinsEl = mustEl('#coins');
   const statusNoteEl = mustEl('#status-note');
@@ -76,28 +75,22 @@ export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
   });
 
   collectSellBtn.addEventListener('click', () => {
-    lastCapNotice = false;
     callbacks.onCollectPending('sell');
   });
   collectStashBtn.addEventListener('click', () => {
-    lastCapNotice = false;
     callbacks.onCollectPending('stash');
   });
 
   devAway1hBtn.addEventListener('click', () => {
-    lastCapNotice = false;
     callbacks.onDevJumpHours(1);
   });
   devAway4hBtn.addEventListener('click', () => {
-    lastCapNotice = false;
     callbacks.onDevJumpHours(4);
   });
   devAway8hBtn.addEventListener('click', () => {
-    lastCapNotice = true;
     callbacks.onDevJumpHours(8);
   });
   devResetBtn.addEventListener('click', () => {
-    lastCapNotice = false;
     callbacks.onDevReset();
   });
 
@@ -252,8 +245,7 @@ export function mountOverlay(callbacks: OverlayCallbacks): OverlayController {
       const hours = Math.floor(mins / 60);
       const remMins = mins % 60;
       const timeStr = hours > 0 ? `${hours}h ${remMins}m` : `${mins}m`;
-      const isAtCap = state.pending.elapsedMs >= content.balance.offlineCapMs || lastCapNotice;
-      awayDurationEl.textContent = isAtCap
+      awayDurationEl.textContent = state.pending.capped
         ? `Away earnings for ${timeStr} (4h offline cap reached).`
         : `Your island kept working for ${timeStr} while you were away.`;
       awayItemsEl.textContent = formatPileSummary(state.pending);

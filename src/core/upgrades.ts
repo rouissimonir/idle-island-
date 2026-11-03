@@ -69,10 +69,7 @@ export function buyUpgrade(
 
   if (def.effect === 'auto_fisher') {
     const rodLevel = state.upgrades.rod ?? 0;
-    const nextAutoAt = state.lastTickAt + autoCastMs(rodLevel);
-    if (state.fishing.autoNextAt > nextAutoAt) {
-      state.fishing.autoNextAt = nextAutoAt;
-    }
+    state.fishing.autoNextAt = state.lastTickAt + autoCastMs(rodLevel);
   }
 
   return { ok: true, value: { id: def.id, level: nextLevel, cost } };

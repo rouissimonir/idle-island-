@@ -2,17 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { formatSimReport, runSimulation } from '../src/sim/index.ts';
 
 describe('milestone 3 — economy simulation', () => {
-  it('runs a short simulation and a full 14-day simulation with sane progression', () => {
+  it('runs a short simulation and a full 14-day simulation on a 24h/day clock', () => {
     const shortSim = runSimulation({ days: 2, seed: 42 });
     expect(shortSim.days).toHaveLength(2);
+    // 2 full days = 2880 real sim minutes
+    expect(shortSim.state.lastTickAt).toBe(2 * 24 * 60 * 60_000);
 
     const fullSim = runSimulation({ days: 14, seed: 42 });
     expect(fullSim.days).toHaveLength(14);
+    expect(fullSim.state.lastTickAt).toBe(14 * 24 * 60 * 60_000);
 
     // Auto-fisher (cost 240) is not affordable on the very first cast
     expect(fullSim.firstCastCoins).toBeLessThan(240);
 
-    // Helper (cost 4200) is not owned at the end of Day 1
+    // Helper (cost 9500) is not owned at the end of Day 1
     const day1 = fullSim.days[0];
     expect(day1).toBeDefined();
     expect(day1?.upgrades.helper).toBe(0);

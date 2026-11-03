@@ -1,6 +1,6 @@
 # Island Idle
 
-A small 3D idle island: fish, farm, leave, and come back to collect. This repository is the starter shell. The rules are written down. The fishing and farming actions are the next milestone, not this one.
+A small 3D idle island: fish, farm, leave, and come back to collect. Milestones 0–3 are implemented: core rules (`src/core`), playable 3D scene and HTML overlay (`src/render`, `src/ui`), and the 14-day economy simulation (`src/sim`).
 
 The owner does not hand-write the code. Agents should start at [AGENTS.md](AGENTS.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -11,15 +11,23 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:47321 . You should see a low-poly island, water, a dock, and four empty plots. The coin line stays at 0. Tapping the water does nothing yet.
+Open http://127.0.0.1:47321 .
+
+### How to play
+
+- **Fish**: Tap the water or the dock in the 3D view (or click **Cast Line**) to catch fish into your basket. Each cast starts a manual cooldown and triggers a short water splash.
+- **Plant & Harvest**: Pick a crop chip (**Turnip**, **Carrot**, or **Pumpkin**) in the bottom dock, then tap an empty 3D plot (or its plot button) to plant. When a crop is ripe, tap the plot to harvest it into your basket.
+- **Sell**: Click **Sell** to convert everything in your basket into coins at current market prices.
+- **Upgrades**: Open **Upgrades** to spend coins on the three level tracks (**Better Rod**, **Fertile Soil**, **Market Stall**) and the three automation unlocks (**Auto-fisher**, **Sprinkler**, **Farm Helper**).
+- **Away & Dev Clock**: Use the top-right **Dev** controls (**Away 1h**, **Away 4h**, **Away 8h**, **Reset**) or `?jumpMs=` / `window.__ISLAND__.reloadJumpHours(hours)` to simulate absence up to the 4-hour offline cap and collect or stash pending goods in the **While You Were Away** modal.
 
 Other commands:
 
 ```bash
-npm test          # unit tests
+npm test          # unit tests (Vitest)
 npm run lint      # ESLint and Prettier
 npm run build     # typecheck and production bundle
-npm run sim       # prints a stub until the economy sim exists
+npm run sim       # prints the 14-day economy curve and upgrade timestamps
 npm run shots     # screenshots into artifacts/ (needs Playwright's Chromium)
 ```
 
