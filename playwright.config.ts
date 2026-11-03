@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'playwright/test';
 
 const port = 47323;
+const containerChromium = '/ms-playwright/chrome-headless-shell-linux64/chrome-headless-shell';
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -12,6 +14,9 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     trace: 'off',
+    launchOptions: existsSync(containerChromium)
+      ? { executablePath: containerChromium }
+      : undefined,
   },
   projects: [
     {

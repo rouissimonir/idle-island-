@@ -13,6 +13,8 @@ export default tseslint.config(
       'public/**',
       'playwright-report/**',
       'test-results/**',
+      '.playwright-cli/**',
+      '.aistudio/**',
     ],
   },
   eslint.configs.recommended,

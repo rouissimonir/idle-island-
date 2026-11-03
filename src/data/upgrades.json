@@ -5,7 +5,7 @@
     "description": "Faster casts and a better chance at rare fish.",
     "effect": "rod",
     "maxLevel": 5,
-    "costs": [30, 160, 560, 1800, 5200],
+    "costs": [30, 480, 2800, 12000, 42000],
     "automation": false
   },
   {
@@ -14,7 +14,7 @@
     "description": "Crops planted after this upgrade grow faster.",
     "effect": "soil",
     "maxLevel": 5,
-    "costs": [40, 190, 680, 2000, 5600],
+    "costs": [40, 540, 3100, 13500, 46000],
     "automation": false
   },
   {
@@ -23,7 +23,7 @@
     "description": "Sell fish and crops for more coins.",
     "effect": "market",
     "maxLevel": 5,
-    "costs": [55, 210, 740, 2200, 6000],
+    "costs": [55, 620, 3400, 15000, 50000],
     "automation": false
   },
   {
@@ -41,7 +41,7 @@
     "description": "Shortens grow time for crops planted after you buy it.",
     "effect": "sprinkler",
     "maxLevel": 1,
-    "costs": [1800],
+    "costs": [2600],
     "automation": true
   },
   {
@@ -50,7 +50,7 @@
     "description": "Harvests ripe crops and replants the same crop, including while you are away.",
     "effect": "helper",
     "maxLevel": 1,
-    "costs": [4200],
+    "costs": [9500],
     "automation": true
   }
 ]

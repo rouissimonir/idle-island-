@@ -6,7 +6,12 @@ import { defineConfig } from 'vitest/config';
 const assetRoot = path.resolve('assets');
 
 const assetHandler: Connect.NextHandleFunction = (req, res, next) => {
-  const raw = (req.url ?? '/').split('?')[0] ?? '/';
+  const reqUrl = req.url ?? '/';
+  if (reqUrl.includes('?import')) {
+    next();
+    return;
+  }
+  const raw = reqUrl.split('?')[0] ?? '/';
   const urlPath = decodeURIComponent(raw);
   const trimmed = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
   const file = path.resolve(assetRoot, `.${trimmed}`);
@@ -43,8 +48,14 @@ function islandAssets(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [islandAssets()],
-  server: { host: '0.0.0.0', port: 47321, strictPort: true },
-  preview: { host: '127.0.0.1', port: 47323, strictPort: true },
+  server: {
+    host: '0.0.0.0',
+    port: 3000,
+    allowedHosts: true,
+    hmr: process.env.DISABLE_HMR !== 'true',
+    watch: process.env.DISABLE_HMR === 'true' ? null : {},
+  },
+  preview: { host: '127.0.0.1', port: 47323, strictPort: true, allowedHosts: true },
   build: { chunkSizeWarningLimit: 800 },
   test: {
     environment: 'node',

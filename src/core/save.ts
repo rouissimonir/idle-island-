@@ -15,12 +15,16 @@ export function deserialize(raw: string): GameState | null {
   }
 }
 
+const UPGRADE_MAX = new Map(content.upgrades.map((u) => [u.id, u.maxLevel]));
+const FISH_IDS = new Set(content.fish.map((f) => f.id));
+const CROP_IDS = new Set(content.crops.map((c) => c.id));
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== SAVE_VERSION) return false;
   if (!isNonNegativeInt(value.coins) || !isNonNegativeInt(value.rngState)) return false;
   if (typeof value.lastTickAt !== 'number' || !Number.isFinite(value.lastTickAt)) return false;
-  if (!isCountRecord(value.upgrades)) return false;
+  if (!isValidUpgrades(value.upgrades)) return false;
   if (!isPiles(value.inventory) || !isPiles(value.collection)) return false;
   if (value.pending !== null && !isPending(value.pending)) return false;
   if (!isRecord(value.fishing)) return false;
@@ -31,11 +35,21 @@ function isGameState(value: unknown): value is GameState {
   return value.plots.every(isPlot);
 }
 
+function isValidUpgrades(value: unknown): value is Record<string, number> {
+  if (!isCountRecord(value)) return false;
+  for (const [id, level] of Object.entries(value)) {
+    const max = UPGRADE_MAX.get(id);
+    if (max === undefined || level > max) return false;
+  }
+  return true;
+}
+
 function isPlot(value: unknown): value is PlotState {
   if (!isRecord(value)) return false;
   const empty = value.cropId === null && value.plantedAt === null && value.readyAt === null;
   const planted =
     typeof value.cropId === 'string' &&
+    CROP_IDS.has(value.cropId) &&
     isFiniteNumber(value.plantedAt) &&
     isFiniteNumber(value.readyAt);
   return empty || planted;
@@ -43,12 +57,17 @@ function isPlot(value: unknown): value is PlotState {
 
 function isPending(value: unknown): boolean {
   if (!isRecord(value) || !isNonNegativeInt(value.elapsedMs)) return false;
-  return isCountRecord(value.fish) && isCountRecord(value.crops);
+  return isKnownCounts(value.fish, FISH_IDS) && isKnownCounts(value.crops, CROP_IDS);
 }
 
 function isPiles(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return isCountRecord(value.fish) && isCountRecord(value.crops);
+  return isKnownCounts(value.fish, FISH_IDS) && isKnownCounts(value.crops, CROP_IDS);
+}
+
+function isKnownCounts(value: unknown, allowed: Set<string>): value is Record<string, number> {
+  if (!isCountRecord(value)) return false;
+  return Object.keys(value).every((key) => allowed.has(key));
 }
 
 function isCountRecord(value: unknown): value is Record<string, number> {

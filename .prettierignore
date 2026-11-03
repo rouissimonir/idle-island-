@@ -5,3 +5,7 @@ android
 artifacts
 public
 package-lock.json
+playwright-report
+test-results
+.playwright-cli
+.aistudio

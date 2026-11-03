@@ -1,16 +1,42 @@
 import * as THREE from 'three';
 import { content } from '../core/content.ts';
+import type { GameState } from '../core/types.ts';
+import type { ProjectTarget } from '../debug.ts';
 import { findAsset, loadModel } from './assets.ts';
 import { MAX_PIXEL_RATIO, nextFrameDecision } from './loop.ts';
 import { SCENE_ASSETS, type SceneAssetId } from './props.ts';
 
-const ZOOM = 5.6;
+const BASE_ZOOM = 5.6;
+const MIN_ZOOM = 3.6;
+const MAX_ZOOM = 8.0;
+const SPLASH_DURATION_MS = 450;
+
+export interface SceneInteractions {
+  onWaterTap?: () => void;
+  onPlotTap?: (plotIndex: number) => void;
+}
 
 export interface IslandView {
+  syncState: (state: GameState, now: number) => void;
+  triggerSplash: (colorHex?: string) => void;
+  project: (target: ProjectTarget) => { x: number; y: number } | null;
   dispose: () => void;
 }
 
-export async function mountScene(canvas: HTMLCanvasElement): Promise<IslandView> {
+interface PlotVisuals {
+  group: THREE.Group;
+  anchor: THREE.Object3D;
+  sproutGroup: THREE.Group;
+  stemMesh: THREE.Mesh;
+  bulbMesh: THREE.Mesh;
+  ripeRing: THREE.Mesh;
+  bulbMaterial: THREE.MeshLambertMaterial;
+}
+
+export async function mountScene(
+  canvas: HTMLCanvasElement,
+  interactions: SceneInteractions = {},
+): Promise<IslandView> {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -23,32 +49,67 @@ export async function mountScene(canvas: HTMLCanvasElement): Promise<IslandView>
 
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 80);
-  const hemi = new THREE.HemisphereLight('#fff4e0', '#7f9a62', 0.9);
+  const hemi = new THREE.HemisphereLight('#fff4e0', '#7f9a62', 0.95);
   const sun = new THREE.DirectionalLight('#fff0d4', 1.15);
   sun.position.set(6, 10, 4);
   scene.add(hemi, sun);
 
-  await mountProps(scene);
+  const { interactables, plotVisuals, splashGroup, splashRingMat, splashBobberMat } =
+    await mountProps(scene);
 
+  let yaw = Math.PI / 4;
+  let zoom = BASE_ZOOM;
   let raf = 0;
   let running = false;
   let dirty = true;
   let last = 0;
+  let splashEndAt = 0;
+
+  const updateCamera = (): void => {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (width < 1 || height < 1) return;
+    const aspect = width / height;
+    camera.left = -zoom * aspect;
+    camera.right = zoom * aspect;
+    camera.top = zoom;
+    camera.bottom = -zoom;
+    const radius = Math.hypot(12, 12);
+    camera.position.set(Math.sin(yaw) * radius, 10, Math.cos(yaw) * radius);
+    camera.lookAt(0, 0.2, 0);
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+  };
 
   const frame = (time: number): void => {
+    const isSplashing = time < splashEndAt;
+    if (isSplashing) {
+      const progress = Math.max(0, Math.min(1, 1 - (splashEndAt - time) / SPLASH_DURATION_MS));
+      splashGroup.visible = true;
+      const scale = 0.5 + progress * 1.4;
+      splashGroup.scale.set(scale, 1, scale);
+      splashGroup.position.y = -0.12 + Math.sin(progress * Math.PI) * 0.12;
+    } else if (splashGroup.visible) {
+      splashGroup.visible = false;
+      dirty = true;
+    }
+
     const decision = nextFrameDecision({
       hidden: document.hidden,
       elapsedMs: time - last,
       dirty,
-      animating: false,
+      animating: isSplashing,
     });
     if (decision.render) {
       last = time;
       renderer.render(scene, camera);
       dirty = false;
     }
-    if (decision.continueLoop) raf = requestAnimationFrame(frame);
-    else running = false;
+    if (decision.continueLoop) {
+      raf = requestAnimationFrame(frame);
+    } else {
+      running = false;
+    }
   };
 
   const requestRender = (): void => {
@@ -64,14 +125,7 @@ export async function mountScene(canvas: HTMLCanvasElement): Promise<IslandView>
     if (width < 1 || height < 1) return;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
     renderer.setSize(width, height, false);
-    const aspect = width / height;
-    camera.left = -ZOOM * aspect;
-    camera.right = ZOOM * aspect;
-    camera.top = ZOOM;
-    camera.bottom = -ZOOM;
-    camera.position.set(12, 10, 12);
-    camera.lookAt(0, 0.2, 0);
-    camera.updateProjectionMatrix();
+    updateCamera();
     requestRender();
   };
 
@@ -84,22 +138,227 @@ export async function mountScene(canvas: HTMLCanvasElement): Promise<IslandView>
     requestRender();
   };
 
+  // Raycasting and gentle yaw/zoom gestures
+  const raycaster = new THREE.Raycaster();
+  const pointerNdc = new THREE.Vector2();
+  const scratchVec = new THREE.Vector3();
+
+  let pointerDown = false;
+  let startX = 0;
+  let startY = 0;
+  let startYaw = yaw;
+  let dragged = false;
+
+  const onPointerDown = (event: PointerEvent): void => {
+    if (event.button !== 0 && event.pointerType === 'mouse') return;
+    pointerDown = true;
+    dragged = false;
+    startX = event.clientX;
+    startY = event.clientY;
+    startYaw = yaw;
+  };
+
+  const onPointerMove = (event: PointerEvent): void => {
+    if (!pointerDown) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.hypot(dx, dy) > 6) {
+      dragged = true;
+    }
+    if (dragged) {
+      yaw = startYaw - dx * 0.007;
+      updateCamera();
+      requestRender();
+    }
+  };
+
+  const handleTap = (clientX: number, clientY: number): void => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return;
+    pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointerNdc, camera);
+
+    const hits = raycaster.intersectObjects(interactables, true);
+    for (const hit of hits) {
+      const tagged = findTaggedGroup(hit.object);
+      if (!tagged) continue;
+      const kind = tagged.userData.kind as string | undefined;
+      if (kind === 'plot') {
+        const plotIndex = tagged.userData.plotIndex as number | null;
+        if (typeof plotIndex === 'number') {
+          interactions.onPlotTap?.(plotIndex);
+          return;
+        }
+      }
+      if (kind === 'water') {
+        interactions.onWaterTap?.();
+        return;
+      }
+      if (kind === 'ground') {
+        // Ignore clicks on ground/cottage/tree/rock that occlude water behind them
+        return;
+      }
+    }
+  };
+
+  const onPointerUp = (event: PointerEvent): void => {
+    if (!pointerDown) return;
+    pointerDown = false;
+    if (!dragged) {
+      handleTap(event.clientX, event.clientY);
+    }
+  };
+
+  const onPointerCancel = (): void => {
+    pointerDown = false;
+    dragged = false;
+  };
+
+  const onWheel = (event: WheelEvent): void => {
+    event.preventDefault();
+    const factor = event.deltaY > 0 ? 1.06 : 0.94;
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
+    updateCamera();
+    requestRender();
+  };
+
+  canvas.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerCancel);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+
   const observer = new ResizeObserver(() => resize());
   observer.observe(canvas);
   document.addEventListener('visibilitychange', onVisibility);
   resize();
 
+  const syncState = (state: GameState, now: number): void => {
+    let changed = false;
+    for (let i = 0; i < plotVisuals.length; i += 1) {
+      const visual = plotVisuals[i];
+      const plot = state.plots[i];
+      if (!visual || !plot) continue;
+
+      if (plot.cropId === null || plot.plantedAt === null || plot.readyAt === null) {
+        if (visual.sproutGroup.visible) {
+          visual.sproutGroup.visible = false;
+          changed = true;
+        }
+        continue;
+      }
+
+      const crop = content.crops.find((c) => c.id === plot.cropId);
+      if (!crop) continue;
+
+      const total = Math.max(1, plot.readyAt - plot.plantedAt);
+      const elapsed = Math.max(0, now - plot.plantedAt);
+      const progress = Math.min(1, elapsed / total);
+      const isRipe = now >= plot.readyAt;
+
+      if (!visual.sproutGroup.visible) {
+        visual.sproutGroup.visible = true;
+        changed = true;
+      }
+
+      visual.bulbMaterial.color.set(crop.color);
+      const targetScale = 0.45 + progress * 0.65;
+      if (Math.abs(visual.sproutGroup.scale.x - targetScale) > 0.02) {
+        visual.sproutGroup.scale.setScalar(targetScale);
+        changed = true;
+      }
+      if (visual.ripeRing.visible !== isRipe) {
+        visual.ripeRing.visible = isRipe;
+        changed = true;
+      }
+    }
+    if (changed) {
+      requestRender();
+    }
+  };
+
+  const triggerSplash = (colorHex = '#ffffff'): void => {
+    const reducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      requestRender();
+      return;
+    }
+    splashBobberMat.color.set(colorHex);
+    splashRingMat.color.set('#e8f9ff');
+    splashEndAt = performance.now() + SPLASH_DURATION_MS;
+    splashGroup.visible = true;
+    requestRender();
+  };
+
+  const project = (target: ProjectTarget): { x: number; y: number } | null => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return null;
+    updateCamera();
+
+    if (target === 'water') {
+      scratchVec.set(0.2, -0.15, 3.6);
+    } else if (target === 'dock') {
+      scratchVec.set(0.2, 0.1, 2.6);
+    } else {
+      let plotIndex = -1;
+      if (typeof target === 'number') {
+        plotIndex = target;
+      } else if (typeof target === 'object' && target !== null && 'plot' in target) {
+        plotIndex = target.plot;
+      } else if (typeof target === 'string' && target.startsWith('plot-')) {
+        plotIndex = Number(target.slice(5));
+      }
+      const visual = plotVisuals[plotIndex];
+      if (!visual) return null;
+      visual.group.getWorldPosition(scratchVec);
+      scratchVec.y += 0.1;
+    }
+
+    scratchVec.project(camera);
+    const x = Math.round(rect.left + ((scratchVec.x + 1) / 2) * rect.width);
+    const y = Math.round(rect.top + ((-scratchVec.y + 1) / 2) * rect.height);
+    return { x, y };
+  };
+
   return {
+    syncState,
+    triggerSplash,
+    project,
     dispose() {
       observer.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      canvas.removeEventListener('wheel', onWheel);
       cancelAnimationFrame(raf);
       renderer.dispose();
     },
   };
 }
 
-async function mountProps(scene: THREE.Scene): Promise<void> {
+function findTaggedGroup(obj: THREE.Object3D | null): THREE.Object3D | null {
+  let current: THREE.Object3D | null = obj;
+  while (current) {
+    if (current.userData && typeof current.userData.kind === 'string') {
+      return current;
+    }
+    current = current.parent;
+  }
+  return null;
+}
+
+async function mountProps(scene: THREE.Scene): Promise<{
+  interactables: THREE.Object3D[];
+  plotVisuals: PlotVisuals[];
+  splashGroup: THREE.Group;
+  splashRingMat: THREE.MeshLambertMaterial;
+  splashBobberMat: THREE.MeshLambertMaterial;
+}> {
   const placed: {
     id: SceneAssetId;
     name: string;
@@ -129,6 +388,10 @@ async function mountProps(scene: THREE.Scene): Promise<void> {
   for (const id of SCENE_ASSETS) {
     if (!findAsset(id)) throw new Error(`assets/assets.json is missing "${id}"`);
   }
+
+  const interactables: THREE.Object3D[] = [];
+  const plotVisuals: PlotVisuals[] = [];
+
   for (const prop of placed) {
     const entry = findAsset(prop.id);
     if (!entry) continue;
@@ -142,8 +405,76 @@ async function mountProps(scene: THREE.Scene): Promise<void> {
       group.clear();
       group.add(model);
     }
+
+    if (prop.kind === 'plot' && typeof prop.plotIndex === 'number') {
+      let anchor = group.getObjectByName('cropAnchor');
+      if (!anchor) {
+        anchor = new THREE.Object3D();
+        anchor.name = 'cropAnchor';
+        anchor.position.set(0, 0.25, 0);
+        group.add(anchor);
+      }
+      const sprout = createCropVisual(anchor);
+      plotVisuals[prop.plotIndex] = {
+        group,
+        anchor,
+        ...sprout,
+      };
+    }
+
     scene.add(group);
+    interactables.push(group);
   }
+
+  // Pre-allocated splash/bobber visual for fishing casts (zero per-frame allocations)
+  const splashGroup = new THREE.Group();
+  splashGroup.name = 'fishing-splash';
+  splashGroup.position.set(0.2, -0.12, 3.45);
+  splashGroup.visible = false;
+
+  const splashRingMat = lambert('#e8f9ff');
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.32, 16), splashRingMat);
+  ring.rotation.x = -Math.PI / 2;
+
+  const splashBobberMat = lambert('#f26a4b');
+  const bobber = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), splashBobberMat);
+  bobber.position.y = 0.08;
+
+  splashGroup.add(ring, bobber);
+  scene.add(splashGroup);
+
+  return { interactables, plotVisuals, splashGroup, splashRingMat, splashBobberMat };
+}
+
+function createCropVisual(anchor: THREE.Object3D): {
+  sproutGroup: THREE.Group;
+  stemMesh: THREE.Mesh;
+  bulbMesh: THREE.Mesh;
+  ripeRing: THREE.Mesh;
+  bulbMaterial: THREE.MeshLambertMaterial;
+} {
+  const sproutGroup = new THREE.Group();
+  sproutGroup.visible = false;
+
+  const stemMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.06, 0.22, 6),
+    lambert('#4e8c3a'),
+  );
+  stemMesh.position.y = 0.14;
+
+  const bulbMaterial = lambert('#e6c36a');
+  const bulbMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 0), bulbMaterial);
+  bulbMesh.position.y = 0.02;
+
+  const ripeRing = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 12), lambert('#ffe066'));
+  ripeRing.rotation.x = -Math.PI / 2;
+  ripeRing.position.y = -0.08;
+  ripeRing.visible = false;
+
+  sproutGroup.add(stemMesh, bulbMesh, ripeRing);
+  anchor.add(sproutGroup);
+
+  return { sproutGroup, stemMesh, bulbMesh, ripeRing, bulbMaterial };
 }
 
 function placeholder(id: SceneAssetId): THREE.Object3D {

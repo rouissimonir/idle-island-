@@ -5,17 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#b7dcea" />
     <title>Island Idle</title>
+    <meta
+      name="description"
+      content="Saltglass Isle — a cozy 3D fishing and farming idle island that keeps going while you are away."
+    />
+    <meta property="og:title" content="Island Idle" />
+    <meta
+      property="og:description"
+      content="Saltglass Isle — a cozy 3D fishing and farming idle island that keeps going while you are away."
+    />
+    <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
+  <body data-state="playing">
     <div id="app">
       <canvas id="scene" aria-label="Saltglass Isle, a small fishing and farming island"></canvas>
       <div id="ui">
-        <div class="chip">
-          <p class="eyebrow">Saltglass Isle</p>
-          <h1>Island Idle</h1>
-          <p id="coins" class="coins">0 coins</p>
-          <p class="note">Prototype shell. Fishing and farming land in the next milestone.</p>
+        <div class="top-row">
+          <section class="chip" aria-label="Island status">
+            <div class="chip-header">
+              <div>
+                <p class="eyebrow">Saltglass Isle</p>
+                <h1>Island Idle</h1>
+              </div>
+              <p id="coins" class="coins" data-testid="coins">0 coins</p>
+            </div>
+            <p id="status-note" class="note">
+              Tap the water or dock to fish. Tap a plot to plant or harvest.
+            </p>
+            <div class="basket-box" aria-label="Basket contents">
+              <div class="basket-header">
+                <span class="basket-label">Basket</span>
+                <span id="basket-items" class="basket-items" data-testid="basket-items">Empty</span>
+              </div>
+            </div>
+            <div class="action-row">
+              <button id="cast-btn" type="button" class="btn btn-secondary">Cast Line</button>
+              <button id="sell-btn" type="button" class="btn btn-primary" disabled>
+                Sell (0 coins)
+              </button>
+              <button
+                id="upgrades-btn"
+                type="button"
+                class="btn btn-accent"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+              >
+                Upgrades
+              </button>
+            </div>
+          </section>
+
+          <aside class="dev-panel" aria-label="Developer time controls">
+            <span class="dev-label">Dev</span>
+            <button id="dev-away-1h" type="button" class="dev-btn">Away 1h</button>
+            <button id="dev-away-4h" type="button" class="dev-btn">Away 4h</button>
+            <button id="dev-away-8h" type="button" class="dev-btn">Away 8h</button>
+            <button id="dev-reset" type="button" class="dev-btn dev-btn-danger">Reset</button>
+          </aside>
+        </div>
+
+        <section class="bottom-dock" aria-label="Farming controls">
+          <div class="crop-bar" role="group" aria-label="Crop selection" id="crop-chips"></div>
+          <div class="plots-bar" role="group" aria-label="Farm plots" id="plots-strip"></div>
+        </section>
+
+        <div
+          id="upgrades-sheet"
+          class="modal-backdrop hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="upgrades-title"
+        >
+          <div class="sheet-card">
+            <div class="sheet-header">
+              <div>
+                <p class="eyebrow">Saltglass Market</p>
+                <h2 id="upgrades-title">Island Upgrades</h2>
+              </div>
+              <button
+                id="close-upgrades-btn"
+                type="button"
+                class="btn btn-secondary btn-sm"
+                aria-label="Close upgrades"
+              >
+                Close
+              </button>
+            </div>
+            <div class="sheet-body">
+              <h3 class="section-heading">Tracks</h3>
+              <div id="upgrades-tracks" class="upgrade-list"></div>
+              <h3 class="section-heading">Automation Unlocks</h3>
+              <div id="upgrades-automation" class="upgrade-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="away-modal"
+          class="modal-backdrop hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="away-title"
+        >
+          <div class="sheet-card away-card">
+            <p class="eyebrow">Welcome Back</p>
+            <h2 id="away-title">While You Were Away</h2>
+            <p id="away-duration" class="away-duration"></p>
+            <div id="away-items" class="away-items-list" data-testid="away-items"></div>
+            <p id="away-value" class="away-value"></p>
+            <div class="away-actions">
+              <button id="collect-sell-btn" type="button" class="btn btn-primary">
+                Collect &amp; Sell
+              </button>
+              <button id="collect-stash-btn" type="button" class="btn btn-secondary">
+                Stash in Basket
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -19,6 +19,8 @@ Docs, Vite + TypeScript + Three.js, Capacitor config, ESLint, Prettier, Vitest, 
 
 ## Milestone 1 — Rules
 
+**Done.**
+
 Build the spec in `docs/RULES.md`.
 
 Create:
@@ -55,6 +57,8 @@ Tests, at least:
 
 ## Milestone 2 — Playable shell
 
+**Done.**
+
 Make the browser build playable on top of milestone 1.
 
 - Tap water or dock to fish. Tap a plot to plant the selected crop or harvest if it is ready. Raycast the groups tagged in `mountProps` (`userData.kind`).
@@ -70,6 +74,8 @@ Make the browser build playable on top of milestone 1.
 **Do not** tune the whole economy in this milestone. **Do not** add the native extension.
 
 ## Milestone 3 — Economy sim
+
+**Done.**
 
 Replace the stub in `scripts/sim.ts`. Put the pure runner in `src/sim/` so Vitest can call it.
 

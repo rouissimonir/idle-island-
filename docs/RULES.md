@@ -103,14 +103,14 @@ Rough coins per minute per plot at soil 0, no sprinkler, ignoring rounding: turn
 
 Cost is `costs[currentLevel]`. Buying increments the level by 1 and spends that cost. You cannot buy past `maxLevel` or with too few coins.
 
-| Id          | Effect      | Automation | Costs                    |
-| ----------- | ----------- | ---------- | ------------------------ |
-| rod         | rod         | no         | 30, 160, 560, 1800, 5200 |
-| soil        | soil        | no         | 40, 190, 680, 2000, 5600 |
-| market      | market      | no         | 55, 210, 740, 2200, 6000 |
-| auto_fisher | auto_fisher | yes        | 240                      |
-| sprinkler   | sprinkler   | yes        | 1800                     |
-| helper      | helper      | yes        | 4200                     |
+| Id          | Effect      | Automation | Costs                       |
+| ----------- | ----------- | ---------- | --------------------------- |
+| rod         | rod         | no         | 30, 480, 2800, 12000, 42000 |
+| soil        | soil        | no         | 40, 540, 3100, 13500, 46000 |
+| market      | market      | no         | 55, 620, 3400, 15000, 50000 |
+| auto_fisher | auto_fisher | yes        | 240                         |
+| sprinkler   | sprinkler   | yes        | 2600                        |
+| helper      | helper      | yes        | 9500                        |
 
 Suggested buy order for the sim, stopping at the first step the player cannot afford: rod 1, soil 1, market 1, auto-fisher, rod 2, sprinkler, soil 2, market 2, helper, then the remaining levels of rod, soil, and market in that rotation. Do not skip ahead to a later step.
 
@@ -162,7 +162,11 @@ The report lists the fish and crops produced by **this** call and the coins they
 
 `jumpAway` for the dev clock and for reload tests is `shiftTimestamps(state, -ms)` then `advanceTime(state, now, 'away')`. `shiftTimestamps` moves `lastTickAt`, both fishing timestamps, and every non-null `plantedAt` / `readyAt`. It does not change `pending.elapsedMs`.
 
+## Save validation
+
+`deserialize` validates all upgrade, fish, and crop IDs against `src/data/*.json` and rejects saves containing unknown item/upgrade IDs or upgrade levels exceeding `maxLevel` (returning `null`).
+
 ## What is implemented now
 
 - Content JSON, schema, `GameState`, `createInitialState`, `serialize` / `deserialize`, `cappedElapsedMs`, save adapter.
-- Not implemented: RNG, formulas, actions, `advanceTime`, UI, sim.
+- Core rules: `nextUnit` (RNG), formulas, fishing, farming, upgrades, economy, `advanceTime` / `shiftTimestamps`, UI overlay, 3D scene interactions, and 14-day economy simulation.
