@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@capacitor/core": "^8.0.0",
+    "@island-idle/widget-bridge": "file:plugins/widget-bridge",
     "three": "^0.180.0"
   },
   "devDependencies": {

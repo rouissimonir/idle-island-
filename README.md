@@ -72,11 +72,16 @@ Capacitor copies the `dist/` build. The app id is `app.islandidle.game` (`capaci
 - `APP_STORE_CONNECT_API_KEY_P8` (contents of the `.p8` key file)
 - `APPLE_TEAM_ID`
 - `BUILD_CERTIFICATE_BASE64` and `BUILD_CERTIFICATE_PASSWORD`
-- `PROVISIONING_PROFILE_BASE64`
+- `PROVISIONING_PROFILE_BASE64` (app `app.islandidle.game`)
+- `PROVISIONING_PROFILE_WIDGET_BASE64` (extension `app.islandidle.game.IslandActivities`)
 
 If a secret is missing, the workflow fails and prints that secret’s name. Milestone 5 stays open until the owner confirms on an iPhone that force-quit keeps the save and backgrounding stops the render loop. Do not submit for App Store review from this path.
 
-Live Activities, the Dynamic Island, the home-screen widget, and StandBy are not in this repo. The placeholder is [docs/NATIVE.md](docs/NATIVE.md). Do not add that Swift target until the roadmap says so.
+### Widgets / Live Activity / StandBy
+
+Milestone 6: the web build writes a tiny snapshot (`toWidgetSnapshot`) on every save. On iOS, `@island-idle/widget-bridge` stores it in App Group `group.app.islandidle.game` as `widget-snapshot.json`. The `IslandActivities` extension shows that headline on the home-screen widget, Lock Screen / StandBy accessories, and Live Activity / Dynamic Island. Swift does not run the economy.
+
+Apple Developer: enable the App Group on `app.islandidle.game`, create `app.islandidle.game.IslandActivities` with the same group, and add GitHub secret `PROVISIONING_PROFILE_WIDGET_BASE64` for the extension’s App Store profile. Details: [docs/NATIVE.md](docs/NATIVE.md).
 
 ## Add a 3D model
 

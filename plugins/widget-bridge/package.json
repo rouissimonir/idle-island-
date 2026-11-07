@@ -1,0 +1,22 @@
+{
+  "name": "@island-idle/widget-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Writes Island Idle widget snapshots into the App Group for WidgetKit",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "src",
+    "ios",
+    "Package.swift"
+  ],
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  }
+}

@@ -5,7 +5,7 @@ Do the lowest milestone that is not done. One milestone per session. Leave later
 ## Paste this next
 
 ```text
-Milestone 5 is not done yet. Add the GitHub Actions secrets listed in .github/workflows/ios.yml (APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY_P8, APPLE_TEAM_ID, BUILD_CERTIFICATE_BASE64, BUILD_CERTIFICATE_PASSWORD, PROVISIONING_PROFILE_BASE64), run the iOS workflow (or build locally on a Mac with Xcode), then verify on an iPhone via Internal TestFlight that force-quit keeps the save and backgrounding stops the render loop. Do not mark milestone 5 done until those checks pass. Do not submit for App Store review. Do not start milestones 6–8.
+Milestone 6 is implemented in the repo. On Apple Developer, enable App Group group.app.islandidle.game on app.islandidle.game, create App ID app.islandidle.game.IslandActivities with that App Group, add App Store profile secret PROVISIONING_PROFILE_WIDGET_BASE64, run the iOS GitHub Actions workflow, then on iPhone: add the Island Idle home-screen widget / check StandBy / confirm Live Activity + Dynamic Island show the snapshot headline after playing. Do not start milestone 7 (StoreKit) until the owner designs the paywall. Do not submit for App Store review.
 ```
 
 ## Milestone 0 — Scaffold
@@ -121,7 +121,9 @@ open ios/App/App.xcodeproj
 
 ## Milestone 6 — Live Activities, widget, StandBy
 
-Only after the owner asks. Read `docs/NATIVE.md` first. The web game writes a snapshot; Swift does not reimplement the economy.
+**Done in repo** (device wiring still needs Apple Developer App Group + widget provisioning profile).
+
+Read `docs/NATIVE.md`. The web game writes `toWidgetSnapshot` into the App Group; Swift only displays it (home widget, StandBy/Lock Screen accessories, Live Activity / Dynamic Island). Capacitor plugin `@island-idle/widget-bridge`. No StoreKit, push, or App Intents.
 
 ## Milestone 7 — Monetization
 
