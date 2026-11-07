@@ -62,7 +62,12 @@ jobs:
           cache: npm
 
       - name: Install npm dependencies
-        run: npm ci
+        run: |
+          npm ci
+          # npm/cli#4828: a lockfile made on Linux may omit other OS
+          # optional native bindings (Vite 8 / Rolldown). Fetch this
+          # runner's binding without rewriting package-lock.json.
+          npm install --include=optional --no-save
 
       - name: Build web assets
         run: npm run build
