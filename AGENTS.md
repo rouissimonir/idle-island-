@@ -4,7 +4,7 @@ Instructions for any coding agent working in this repo (Claude, GPT, Grok, Curso
 
 ## Status
 
-Milestones 0–4 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`, `scripts/sim.ts`), and the GLB art-swap check (`assets/models/rock.glb`, `assets/assets.json`). Milestone 5 web work is complete (dev clock gated to `import.meta.env.DEV`, Reset Island visible), `ios/` exists (Capacitor 8 SPM), and `.github/workflows/ios.yml` uploads an IPA to App Store Connect from secrets. Milestone 5 is still open until the owner verifies on an iPhone via Internal TestFlight that force-quit keeps the save and backgrounding stops the render loop. Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done. Do not skip ahead.
+Milestones 0–5 web/CI work and milestone 6 native surfaces are in the repo: core rules, playable island, economy sim, GLB art swap, Capacitor iOS + App Store Connect workflow, and WidgetKit (home widget / StandBy / Live Activity) fed by `toWidgetSnapshot` via App Group `group.app.islandidle.game`. Owner still needs Apple Developer App Group + widget provisioning (`PROVISIONING_PROFILE_WIDGET_BASE64`) and on-device checks. Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done. Do not skip ahead.
 
 ## Before you finish
 
@@ -40,12 +40,13 @@ assets/models/            GLB files live here
 src/data/                 JSON content + schema parser
 src/core/                 pure game rules, no Three.js, no DOM
 src/render/               Three.js scene, loop, GLB swap
-src/platform/             localStorage adapter; later the widget snapshot
+src/platform/             localStorage adapter + widget snapshot / bridge
 src/ui/                   HTML/CSS overlay
 src/sim/                  14-day economy simulation library
 scripts/sim.ts            npm run sim
 tests/                    Vitest (*.test.ts). Playwright lives in tests/e2e
-ios/                      Capacitor 8 SPM Xcode project (App.xcodeproj)
+plugins/widget-bridge/    Capacitor plugin writing App Group snapshot JSON
+ios/                      Cap 8 SPM app + IslandActivities widget + IslandShared
 .github/workflows/ios.yml macos-latest archive + App Store Connect upload
 ```
 

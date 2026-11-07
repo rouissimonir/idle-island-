@@ -16,6 +16,7 @@ import {
   type GameState,
 } from './core/index.ts';
 import { createSaveAdapter } from './platform/storage.ts';
+import { writeWidgetSnapshot } from './platform/widgetBridge.ts';
 import { mountScene } from './render/scene.ts';
 import { mountOverlay } from './ui/overlay.ts';
 import './style.css';
@@ -49,10 +50,10 @@ if (reloadJumpMs > 0) {
     advanceTime(state, nowAtBoot, 'active');
   }
 }
-adapter.save(serialize(state));
+persistSave(state, nowAtBoot);
 
 const persistAndRender = (now = Date.now()): void => {
-  adapter.save(serialize(state));
+  persistSave(state, now);
   overlay.render(state, now);
   view.syncState(state, now);
 };
@@ -190,7 +191,7 @@ document.addEventListener('visibilitychange', () => {
   const now = Date.now();
   if (document.hidden) {
     stopActiveLoop();
-    adapter.save(serialize(state));
+    persistSave(state, now);
   } else {
     const gap = now - state.lastTickAt;
     if (gap >= content.balance.awayThresholdMs) {
@@ -262,7 +263,7 @@ const debug: IslandDebug = {
   },
   reloadJumpHours: (hours) => {
     const ms = Math.round(hours * 3_600_000);
-    adapter.save(serialize(state));
+    persistSave(state, Date.now());
     window.sessionStorage.setItem(JUMP_STORAGE_KEY, String(ms));
     window.location.reload();
   },
@@ -322,4 +323,9 @@ function freshSeed(): number {
   crypto.getRandomValues(buffer);
   const seed = buffer[0];
   return seed ? seed : 1;
+}
+
+function persistSave(next: GameState, now: number): void {
+  adapter.save(serialize(next));
+  void writeWidgetSnapshot(next, now);
 }
