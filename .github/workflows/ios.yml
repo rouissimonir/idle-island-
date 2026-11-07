@@ -59,19 +59,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
       - name: Install npm dependencies
         run: |
-          npm ci
-          # Belt-and-suspenders for npm/cli#4828: ensure the macOS
-          # Rolldown binding is present even if npm ci skipped it.
-          if [ ! -d node_modules/@rolldown/binding-darwin-arm64 ]; then
-            VERSION="$(node -p "require('./node_modules/rolldown/package.json').version")"
-            npm install "@rolldown/binding-darwin-arm64@${VERSION}" --no-save
-          fi
+          # Vite 8 pulls OS-specific optional natives (rolldown, lightningcss,
+          # …). A Linux-authored package-lock makes npm ci skip darwin
+          # packages (npm/cli#4828). Resolve on this Mac runner instead;
+          # the committed lockfile stays for local/Linux installs.
+          rm -f package-lock.json
+          npm install
           test -d node_modules/@rolldown/binding-darwin-arm64
-          ls node_modules/@rolldown/
+          test -d node_modules/lightningcss-darwin-arm64
+          ls node_modules/@rolldown/ node_modules/lightningcss*
 
       - name: Build web assets
         run: npm run build
