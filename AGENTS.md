@@ -4,7 +4,7 @@ Instructions for any coding agent working in this repo (Claude, GPT, Grok, Curso
 
 ## Status
 
-Milestones 0–4 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`, `scripts/sim.ts`), and the GLB art-swap check (`assets/models/rock.glb`, `assets/assets.json`). Milestone 5 web work is also complete (the dev clock is gated to `import.meta.env.DEV` and hidden in production builds, and a player-facing `Reset Island` button is present); running `npx cap add ios` and verifying save persistence and background loop pause in Xcode on a Mac remain before marking milestone 5 done. Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done. Do not skip ahead.
+Milestones 0–4 are done: docs, tooling, JSON content + schema validation, core rules (`src/core`), playable 3D island + HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`, `scripts/sim.ts`), and the GLB art-swap check (`assets/models/rock.glb`, `assets/assets.json`). Milestone 5 web work is complete (dev clock gated to `import.meta.env.DEV`, Reset Island visible), `ios/` exists (Capacitor 8 SPM), and `.github/workflows/ios.yml` uploads an IPA to App Store Connect from secrets. Milestone 5 is still open until the owner verifies on an iPhone via Internal TestFlight that force-quit keeps the save and backgrounding stops the render loop. Do one milestone per session, always the lowest milestone in [docs/ROADMAP.md](docs/ROADMAP.md) that is not marked done. Do not skip ahead.
 
 ## Before you finish
 
@@ -45,7 +45,8 @@ src/ui/                   HTML/CSS overlay
 src/sim/                  14-day economy simulation library
 scripts/sim.ts            npm run sim
 tests/                    Vitest (*.test.ts). Playwright lives in tests/e2e
-ios/                      not created yet; see README
+ios/                      Capacitor 8 SPM Xcode project (App.xcodeproj)
+.github/workflows/ios.yml macos-latest archive + App Store Connect upload
 ```
 
 There is no database, no auth, and no network API. Do not add them.
@@ -97,15 +98,15 @@ License and source strings are required. Do not commit a GLB whose license you c
 
 ## Commands
 
-| Script             | What it does                                                |
-| ------------------ | ----------------------------------------------------------- |
-| `npm run dev`      | Vite on port 47321                                          |
-| `npm test`         | Vitest, `tests/**/*.test.ts` only                           |
-| `npm run lint`     | ESLint and Prettier                                         |
-| `npm run build`    | `tsc --noEmit` and Vite build                               |
-| `npm run sim`      | 14-day economy curve                                        |
-| `npm run shots`    | Playwright screenshots into `artifacts/` (gitignored)       |
-| `npm run cap:sync` | Production build, then `cap sync` (needs `ios/` from a Mac) |
+| Script             | What it does                                          |
+| ------------------ | ----------------------------------------------------- |
+| `npm run dev`      | Vite on port 47321                                    |
+| `npm test`         | Vitest, `tests/**/*.test.ts` only                     |
+| `npm run lint`     | ESLint and Prettier                                   |
+| `npm run build`    | `tsc --noEmit` and Vite build                         |
+| `npm run sim`      | 14-day economy curve                                  |
+| `npm run shots`    | Playwright screenshots into `artifacts/` (gitignored) |
+| `npm run cap:sync` | Production build, then `cap sync` (needs `ios/`)      |
 
 `npm install` needs the repo `.npmrc` (`legacy-peer-deps=true`). npm 10 crashes while resolving Vitest and typescript-eslint peers without it. TypeScript is 6.0 because typescript-eslint does not accept TypeScript 7 yet. Do not bump either "just because".
 

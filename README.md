@@ -1,6 +1,6 @@
 # Island Idle
 
-A small 3D idle island: fish, farm, leave, and come back to collect. Milestones 0–4 are implemented: core rules (`src/core`), playable 3D scene and HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`), and the GLB art-swap pipeline (`assets/models/rock.glb`).
+A small 3D idle island: fish, farm, leave, and come back to collect. Milestones 0–4 are implemented: core rules (`src/core`), playable 3D scene and HTML overlay (`src/render`, `src/ui`), the 14-day economy simulation (`src/sim`), and the GLB art-swap pipeline (`assets/models/rock.glb`). Milestone 5’s web and CI pieces are in place (`ios/`, App Store Connect workflow); device verification on Internal TestFlight is still open.
 
 The owner does not hand-write the code. Agents should start at [AGENTS.md](AGENTS.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -45,14 +45,14 @@ Screenshots land in `artifacts/`, which is gitignored.
 
 ## Run it on an iPhone
 
-The iOS project is not generated here. On a Mac, with Xcode installed:
+The Capacitor 8 iOS project lives under `ios/` (Swift Package Manager, open `ios/App/App.xcodeproj`). On a Mac with Xcode:
 
 ```bash
 npm install
 npm run build
-npx cap add ios
+npx cap add ios   # only if ios/ is missing
 npx cap sync ios
-open ios/App/App.xcworkspace
+open ios/App/App.xcodeproj
 ```
 
 In Xcode, pick the App target, choose your signing team, and run on a simulator or a phone. After `ios/` exists, later web changes sync with:
@@ -62,6 +62,19 @@ npm run cap:sync
 ```
 
 Capacitor copies the `dist/` build. The app id is `app.islandidle.game` (`capacitor.config.json`).
+
+### GitHub Actions → App Store Connect
+
+[`.github/workflows/ios.yml`](.github/workflows/ios.yml) runs on `macos-latest`, builds the web app, syncs Capacitor, archives the App scheme, and uploads the IPA to App Store Connect for Internal TestFlight. Signing and upload use repository secrets only — never commit certificates, passwords, or API keys:
+
+- `APP_STORE_CONNECT_API_KEY_ID`
+- `APP_STORE_CONNECT_ISSUER_ID`
+- `APP_STORE_CONNECT_API_KEY_P8` (contents of the `.p8` key file)
+- `APPLE_TEAM_ID`
+- `BUILD_CERTIFICATE_BASE64` and `BUILD_CERTIFICATE_PASSWORD`
+- `PROVISIONING_PROFILE_BASE64`
+
+If a secret is missing, the workflow fails and prints that secret’s name. Milestone 5 stays open until the owner confirms on an iPhone that force-quit keeps the save and backgrounding stops the render loop. Do not submit for App Store review from this path.
 
 Live Activities, the Dynamic Island, the home-screen widget, and StandBy are not in this repo. The placeholder is [docs/NATIVE.md](docs/NATIVE.md). Do not add that Swift target until the roadmap says so.
 
