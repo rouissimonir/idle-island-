@@ -81,7 +81,7 @@ If a secret is missing, the workflow fails and prints that secret’s name. Mile
 
 Milestone 6: the web build writes a tiny snapshot (`toWidgetSnapshot`) on every save. On iOS, `@island-idle/widget-bridge` stores it in App Group `group.app.islandidle.game` as `widget-snapshot.json`. The `IslandActivities` extension shows that headline on the home-screen widget, Lock Screen / StandBy accessories, and Live Activity / Dynamic Island. Swift does not run the economy.
 
-Apple Developer: enable the App Group on `app.islandidle.game`, create `app.islandidle.game.IslandActivities` with the same group, and add GitHub secret `PROVISIONING_PROFILE_WIDGET_BASE64` for the extension’s App Store profile. Details: [docs/NATIVE.md](docs/NATIVE.md).
+Apple Developer: enable App Group `group.app.islandidle.game` on **both** App IDs, then **regenerate** App Store profiles (old main-app profile will fail CI without App Groups). Secrets: `PROVISIONING_PROFILE_BASE64` (main) and `PROVISIONING_PROFILE_WIDGET_BASE64` (widget). Details: [docs/NATIVE.md](docs/NATIVE.md).
 
 ## Add a 3D model
 
