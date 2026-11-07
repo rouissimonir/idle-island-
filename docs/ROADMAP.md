@@ -5,7 +5,7 @@ Do the lowest milestone that is not done. One milestone per session. Leave later
 ## Paste this next
 
 ```text
-Finish milestone 5 from docs/ROADMAP.md on a Mac with Xcode and CocoaPods installed: run npm run build, npx cap add ios, npx cap sync ios, and verify in the iOS Simulator that the save survives an app restart and the render loop pauses in the background.
+Milestone 5 is not done yet. Add the GitHub Actions secrets listed in .github/workflows/ios.yml (APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY_P8, APPLE_TEAM_ID, BUILD_CERTIFICATE_BASE64, BUILD_CERTIFICATE_PASSWORD, PROVISIONING_PROFILE_BASE64), run the iOS workflow (or build locally on a Mac with Xcode), then verify on an iPhone via Internal TestFlight that force-quit keeps the save and backgrounding stops the render loop. Do not mark milestone 5 done until those checks pass. Do not submit for App Store review. Do not start milestones 6–8.
 ```
 
 ## Milestone 0 — Scaffold
@@ -98,20 +98,24 @@ Prove a GLB replaces a placeholder without a code change.
 
 ## Milestone 5 — Device shell
 
-On a Mac (the Linux agent environment often cannot run CocoaPods):
+Capacitor 8 uses Swift Package Manager (no CocoaPods). The `ios/` project and `.github/workflows/ios.yml` are in the repo. Web gates for TestFlight (dev clock hidden in production, Reset Island visible) are already done.
+
+On a Mac with Xcode, or via the GitHub Actions macOS runner:
 
 ```bash
 npm install
 npm run build
-npx cap add ios
+npx cap add ios   # only if ios/ is missing
 npx cap sync ios
-open ios/App/App.xcworkspace
+open ios/App/App.xcodeproj
 ```
 
 - `npm run cap:sync` stays the repeat command after `ios/` exists.
-- Run on a simulator or device. Confirm the save survives an app restart and the render loop pauses in the background.
-- Remove or hide the dev clock before TestFlight.
-- Internal TestFlight only after the owner asks.
+- `.github/workflows/ios.yml` archives the App scheme and uploads the IPA to App Store Connect using repository secrets only. Missing secrets fail the job by name.
+- Confirm on a real iPhone (Internal TestFlight): force-quit keeps the save, and backgrounding stops the render loop.
+- Dev clock is already gated to `import.meta.env.DEV` and hidden in production builds.
+- Internal TestFlight only. Do not submit for App Store review yet.
+- Do not mark this milestone done until the iPhone checks above pass.
 
 **Do not** add the widget extension in this milestone.
 
