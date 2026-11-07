@@ -52,10 +52,13 @@ The web app writes the snapshot whenever it persists a save (action, away resolu
 
 ## Apple Developer setup (owner)
 
-1. Enable App Group `group.app.islandidle.game` on the App ID `app.islandidle.game`.
-2. Create App ID `app.islandidle.game.IslandActivities` with the same App Group (+ Live Activities if listed separately).
-3. Create an App Store provisioning profile for the widget extension and add GitHub secret `PROVISIONING_PROFILE_WIDGET_BASE64`.
-4. Rebuild via `.github/workflows/ios.yml` or Xcode.
+1. Enable App Group `group.app.islandidle.game` on App ID `app.islandidle.game`.
+2. Create App ID `app.islandidle.game.IslandActivities` with the **same App Group** (and Live Activities if listed).
+3. **Regenerate** the App Store provisioning profile for the **main app** after enabling App Groups (old profiles lack the capability). Update GitHub secret `PROVISIONING_PROFILE_BASE64`.
+4. Create an App Store provisioning profile for the **widget** App ID (with App Groups). Add GitHub secret `PROVISIONING_PROFILE_WIDGET_BASE64`.
+5. Rebuild via `.github/workflows/ios.yml` or Xcode.
+
+CI error `"requires a provisioning profile with the App Groups feature"` means step 3 or 4 used a profile created before App Groups was turned on — regenerate and re-upload the secret.
 
 ## Not in this file
 
