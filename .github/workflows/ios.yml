@@ -138,8 +138,7 @@ jobs:
       - name: Verify provisioning profiles include App Groups
         run: |
           # Fail fast with a clear secret-update message before xcodebuild.
-          # Editing the App ID alone is not enough if PROVISIONING_PROFILE_BASE64
-          # still holds an old .mobileprovision without application-groups.
+          # Use Python only (macOS plutil -extract Entitlements xml is unreliable).
           REQUIRED_GROUP="group.app.islandidle.game"
           fail=0
 
@@ -147,44 +146,50 @@ jobs:
             local label="$1"
             local path="$2"
             local secret_name="$3"
-            local result
+            local decoded="$RUNNER_TEMP/profile-check.plist"
 
             echo "=== ${label} ==="
-            security cms -D -i "$path" | plutil -extract Name raw -
-            security cms -D -i "$path" | plutil -extract UUID raw -
-            echo "Entitlements:"
-            security cms -D -i "$path" | plutil -extract Entitlements xml -o - - | plutil -p -
+            security cms -D -i "$path" > "$decoded"
+            if ! REQUIRED_GROUP="$REQUIRED_GROUP" LABEL="$label" SECRET_NAME="$secret_name" PROFILE_PLIST="$decoded" python3 - <<'PY'
+          import os, plistlib, pprint
+          from pathlib import Path
 
-            result="$(
-              security cms -D -i "$path" | REQUIRED_GROUP="$REQUIRED_GROUP" python3 -c '
-          import os, plistlib, sys
           required = os.environ["REQUIRED_GROUP"]
-          data = plistlib.loads(sys.stdin.buffer.read())
+          label = os.environ["LABEL"]
+          secret_name = os.environ["SECRET_NAME"]
+          data = plistlib.loads(Path(os.environ["PROFILE_PLIST"]).read_bytes())
+          print("Name:", data.get("Name"))
+          print("UUID:", data.get("UUID"))
           ents = data.get("Entitlements") or {}
-          if "com.apple.security.application-groups" not in ents:
-              print("missing_capability")
-              raise SystemExit(0)
+          print("Entitlements:")
+          pprint.pp(ents)
           groups = ents.get("com.apple.security.application-groups")
           if not isinstance(groups, list):
-              print("groups=")
-              print("missing_group")
-              raise SystemExit(0)
-          print("groups=" + ",".join(groups))
-          print("ok" if required in groups else "missing_group")
-          '
-            )"
-
-            echo "Parsed: ${result}"
-            if echo "$result" | grep -qx 'missing_capability'; then
-              echo "::error::${label} profile from secret ${secret_name} is missing the App Groups capability (com.apple.security.application-groups)."
-              echo "Replace GitHub Actions secret ${secret_name} with a NEW App Store .mobileprovision regenerated AFTER App Group ${REQUIRED_GROUP} was enabled on the App ID."
+              print(
+                  "::error::%s profile from secret %s is missing the App Groups capability "
+                  "(com.apple.security.application-groups)." % (label, secret_name)
+              )
+              print(
+                  "Replace GitHub Actions secret %s with a NEW App Store .mobileprovision "
+                  "regenerated AFTER App Group %s was enabled on the App ID."
+                  % (secret_name, required)
+              )
+              raise SystemExit(2)
+          print("groups=" + ",".join(str(g) for g in groups))
+          if required not in groups:
+              print(
+                  "::error::%s profile from secret %s does not include App Group %s."
+                  % (label, secret_name, required)
+              )
+              print(
+                  "Replace GitHub Actions secret %s with a NEW App Store profile that lists %s."
+                  % (secret_name, required)
+              )
+              raise SystemExit(3)
+          print("%s: OK (%s)" % (label, required))
+          PY
+            then
               fail=1
-            elif echo "$result" | grep -qx 'missing_group'; then
-              echo "::error::${label} profile from secret ${secret_name} does not include App Group ${REQUIRED_GROUP}."
-              echo "Replace GitHub Actions secret ${secret_name} with a NEW App Store profile that lists ${REQUIRED_GROUP}."
-              fail=1
-            else
-              echo "${label}: OK (${REQUIRED_GROUP})"
             fi
           }
 
