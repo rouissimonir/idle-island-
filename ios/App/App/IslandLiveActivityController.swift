@@ -18,7 +18,8 @@ enum IslandLiveActivityController {
 
     static func sync(json: String?) {
         #if canImport(ActivityKit)
-        guard #available(iOS 16.1, *) else { return }
+        // ActivityContent / content-based request APIs require 16.2+.
+        guard #available(iOS 16.2, *) else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let snapshot: IslandWidgetSnapshot
@@ -29,7 +30,7 @@ enum IslandLiveActivityController {
         }
 
         let state = IslandActivityAttributes.ContentState(snapshot: snapshot)
-        Task {
+        Task { @MainActor in
             if let existing = Activity<IslandActivityAttributes>.activities.first {
                 await existing.update(ActivityContent(state: state, staleDate: nil))
             } else {
