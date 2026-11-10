@@ -58,7 +58,30 @@ The web app writes the snapshot whenever it persists a save (action, away resolu
 4. Create an App Store provisioning profile for the **widget** App ID (with App Groups). Add GitHub secret `PROVISIONING_PROFILE_WIDGET_BASE64`.
 5. Rebuild via `.github/workflows/ios.yml` or Xcode.
 
-CI error `"requires a provisioning profile with the App Groups feature"` means step 3 or 4 used a profile created before App Groups was turned on — regenerate and re-upload the secret.
+CI error `"doesn't include the App Groups capability"` / `"doesn't support the group.app.islandidle.game App Group"` means the **secret bytes** are still an old profile. Editing the App ID alone does not update `PROVISIONING_PROFILE_BASE64`.
+
+### Replace `PROVISIONING_PROFILE_BASE64` (main app)
+
+Apple Developer → Certificates, Identifiers & Profiles:
+
+1. Identifiers → `app.islandidle.game` → confirm **App Groups** is on and includes `group.app.islandidle.game` → Save.
+2. Profiles → open the existing App Store profile for `app.islandidle.game` (e.g. "Island Idle App Store") → Edit → regenerate/save so it picks up App Groups → **Download** the new `.mobileprovision`.
+   - Or Profiles → **+** → App Store → select `app.islandidle.game` → select your Distribution cert → name it → Generate → Download.
+3. On Windows PowerShell, Base64-encode the downloaded file (one line, no wrapping):
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\Downloads\Island_Idle_App_Store.mobileprovision")) | Set-Clipboard
+```
+
+Adjust the path/filename to match the download. Paste the clipboard into GitHub → Settings → Secrets and variables → Actions → update secret **`PROVISIONING_PROFILE_BASE64`** (replace the value; do not create a second secret). 4. Optional local check that the new profile lists the group (macOS):
+
+```bash
+security cms -D -i ~/Downloads/Island_Idle_App_Store.mobileprovision | plutil -extract Entitlements xml -o - - | plutil -p -
+```
+
+You must see `com.apple.security.application-groups` and `group.app.islandidle.game`. 5. Only then re-run the iOS workflow (`workflow_dispatch` or a push to `main`). Retrying CI without updating the secret will fail the same way.
+
+Do the same for `PROVISIONING_PROFILE_WIDGET_BASE64` if the widget profile was created before App Groups was enabled on `app.islandidle.game.IslandActivities`.
 
 ## Not in this file
 
