@@ -55,7 +55,8 @@ jobs:
           done
           if [ "$missing" -ne 0 ]; then
             echo "Add the missing secrets under Settings → Secrets and variables → Actions."
-            echo "PROVISIONING_PROFILE_WIDGET_BASE64 is the App Store profile for app.islandidle.game.IslandActivities."
+            echo "PROVISIONING_PROFILE_BASE64 must be a NEW App Store profile for app.islandidle.game that includes App Group group.app.islandidle.game."
+            echo "PROVISIONING_PROFILE_WIDGET_BASE64 is the App Store profile for app.islandidle.game.IslandActivities (same App Group)."
             exit 1
           fi
 
@@ -130,6 +131,73 @@ jobs:
           echo "PROVISIONING_PROFILE_WIDGET_UUID=${WIDGET_INFO%%|*}" >> "$GITHUB_ENV"
           echo "PROVISIONING_PROFILE_WIDGET_NAME=${WIDGET_INFO#*|}" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PATH=${KEYCHAIN_PATH}" >> "$GITHUB_ENV"
+          # Keep decoded paths for the entitlements preflight step.
+          echo "PP_PATH=${PP_PATH}" >> "$GITHUB_ENV"
+          echo "PP_WIDGET_PATH=${PP_WIDGET_PATH}" >> "$GITHUB_ENV"
+
+      - name: Verify provisioning profiles include App Groups
+        run: |
+          # Fail fast with a clear secret-update message before xcodebuild.
+          # Editing the App ID alone is not enough if PROVISIONING_PROFILE_BASE64
+          # still holds an old .mobileprovision without application-groups.
+          REQUIRED_GROUP="group.app.islandidle.game"
+          fail=0
+
+          check_profile() {
+            local label="$1"
+            local path="$2"
+            local secret_name="$3"
+            local result
+
+            echo "=== ${label} ==="
+            security cms -D -i "$path" | plutil -extract Name raw -
+            security cms -D -i "$path" | plutil -extract UUID raw -
+            echo "Entitlements:"
+            security cms -D -i "$path" | plutil -extract Entitlements xml -o - - | plutil -p -
+
+            result="$(
+              security cms -D -i "$path" | REQUIRED_GROUP="$REQUIRED_GROUP" python3 -c '
+          import os, plistlib, sys
+          required = os.environ["REQUIRED_GROUP"]
+          data = plistlib.loads(sys.stdin.buffer.read())
+          ents = data.get("Entitlements") or {}
+          if "com.apple.security.application-groups" not in ents:
+              print("missing_capability")
+              raise SystemExit(0)
+          groups = ents.get("com.apple.security.application-groups")
+          if not isinstance(groups, list):
+              print("groups=")
+              print("missing_group")
+              raise SystemExit(0)
+          print("groups=" + ",".join(groups))
+          print("ok" if required in groups else "missing_group")
+          '
+            )"
+
+            echo "Parsed: ${result}"
+            if echo "$result" | grep -qx 'missing_capability'; then
+              echo "::error::${label} profile from secret ${secret_name} is missing the App Groups capability (com.apple.security.application-groups)."
+              echo "Replace GitHub Actions secret ${secret_name} with a NEW App Store .mobileprovision regenerated AFTER App Group ${REQUIRED_GROUP} was enabled on the App ID."
+              fail=1
+            elif echo "$result" | grep -qx 'missing_group'; then
+              echo "::error::${label} profile from secret ${secret_name} does not include App Group ${REQUIRED_GROUP}."
+              echo "Replace GitHub Actions secret ${secret_name} with a NEW App Store profile that lists ${REQUIRED_GROUP}."
+              fail=1
+            else
+              echo "${label}: OK (${REQUIRED_GROUP})"
+            fi
+          }
+
+          check_profile "Main app (app.islandidle.game)" "$PP_PATH" "PROVISIONING_PROFILE_BASE64"
+          check_profile "Widget (app.islandidle.game.IslandActivities)" "$PP_WIDGET_PATH" "PROVISIONING_PROFILE_WIDGET_BASE64"
+
+          if [ "$fail" -ne 0 ]; then
+            echo
+            echo "Regenerating/editing the App ID alone is not enough if the secret bytes are still the old profile."
+            echo "Download a fresh App Store profile, Base64-encode it, and update the named secret."
+            echo "See docs/NATIVE.md (Apple Developer setup)."
+            exit 1
+          fi
 
       - name: Write ExportOptions.plist
         env:
